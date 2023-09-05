@@ -1,6 +1,8 @@
 # MG Crypto Trader
 ## Crypto Trading Bots to automate your Crypto trading strategies and amplify profits
 
+### Telegram Channel: https://t.me/+TyYGz3qscfk0YjQx
+
 Cryptocurrency trading bots are automated software programs that can execute buy and sell orders on cryptocurrency exchanges based on predefined trading strategies. These bots are designed to take advantage of price fluctuations in the volatile cryptocurrency markets and can operate 24/7 without the need for human intervention.
 
 Here are some key points to consider if you're interested in using a cryptocurrency trading bot:

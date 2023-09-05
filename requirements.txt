@@ -1,0 +1,2 @@
+pycaret[full]
+python-binance
