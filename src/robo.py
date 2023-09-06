@@ -192,6 +192,7 @@ def start_predict_engine(symbol, tail=-1, numeric_features=['close', 'rsi'], reg
 
         df = calc_RSI(df, last_one=True)
         df.to_csv(f'log_after_{cont}_calc_RSI.csv', sep=';', index=False) if trace else None
+        print('Last Data: \n', df[['open_time', 'close', 'rsi']].tail(1))
 
         df, _ = regresstion_times(df, numeric_features, regression_times, last_one=True)
         df.to_csv(f'log_after_{cont}_regresstion_times.csv', sep=';', index=False) if trace else None
