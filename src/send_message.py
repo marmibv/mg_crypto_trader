@@ -10,7 +10,7 @@ def send_to_telegram(message):
 
     try:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # response = requests.post(apiURL, json={'chat_id': chatID, 'text': f'[{now}]: {message}'})
-        # print(response.text)
+        response = requests.post(apiURL, json={'chat_id': chatID, 'text': f'[{now}]: {message}'})
+        print(response.text)
     except Exception as e:
         print(e)
