@@ -46,7 +46,7 @@ def load_model(symbol, estimator='xgboost'):
     ca = ClassificationExperiment()
     model_name = get_model_name(symbol, estimator)
     print('load_model: Loading model:', model_name)
-    model = ca.load_model(model_name)
+    model = ca.load_model(model_name, verbose=False)
     # model = ca.load_model('xgboost_SL_2.0_RT_720_RPL_24_1')
     return ca, model
 
@@ -179,6 +179,7 @@ def start_predict_engine(symbol, tail=-1, numeric_features=['close', 'rsi'], reg
     print('start_predict_engine: Info after regresstion_times: ', df.info())
 
     cont = 0
+    cont_aviso = 0
     while True:
         # df = get_data(symbol, save_database=False, interval='1h', tail=tail)
         _df = get_klines(symbol, interval='1h', max_date=None, limit=1, adjust_index=True)
@@ -192,23 +193,28 @@ def start_predict_engine(symbol, tail=-1, numeric_features=['close', 'rsi'], reg
 
         df = calc_RSI(df, last_one=True)
         df.to_csv(f'log_after_{cont}_calc_RSI.csv', sep=';', index=False) if trace else None
-        print('Last Data: \n', df[['open_time', 'close', 'rsi']].tail(1))
 
         df, _ = regresstion_times(df, numeric_features, regression_times, last_one=True)
         df.to_csv(f'log_after_{cont}_regresstion_times.csv', sep=';', index=False) if trace else None
 
         df[['open_time'] + numeric_features].to_csv('log_experiment_data.log', sep=';', index=False) if trace else None
+
         df_predict = experiment.predict_model(model, df.tail(1), verbose=False)
         df_predict.to_csv(f'log_after_{cont}_df_predict.csv', sep=';', index=False) if trace else None
 
         operacao = df_predict['prediction_label'].values[0]
+
+        msg = f'Last Data: open_time: {df_predict.tail(1)["open_time"].values[0]} - close: {df_predict.tail(1)["close"].values[0]} - rsi: {df_predict.tail(1)["rsi"].values[0]} - prediction_label: {operacao}'
+        print(msg)
+
         if (operacao.startswith('SOBE') or operacao.startswith('CAI')):
             send_message(df_predict)
         time.sleep(sleep_refresh)
         cont += 1
-        if cont > 5000:
+        cont_aviso += 1
+        if cont_aviso > 100:
             sm.send_to_telegram('Ainda trabalhando...')
-            cont = 0
+            cont_aviso = 0
 
 
 def main(args):
