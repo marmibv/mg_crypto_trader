@@ -136,7 +136,7 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_
         df_klines.index = df_klines['open_time']
         df_klines.index.name = 'ix_open_time'
 
-    print(f'get_klines: count: {df_klines.shape[0]} - max_date: {max_date} - limit: {limit} - adjust_index: {adjust_index}')
+    # print(f'get_klines: count: {df_klines.shape[0]} - max_date: {max_date} - limit: {limit} - adjust_index: {adjust_index}')
     return df_klines
 
 
@@ -212,7 +212,7 @@ def start_predict_engine(symbol, tail=-1, numeric_features=['close', 'rsi'], reg
         time.sleep(sleep_refresh)
         cont += 1
         cont_aviso += 1
-        if cont_aviso > 100:
+        if cont_aviso > 1000:
             sm.send_to_telegram('Ainda trabalhando...')
             cont_aviso = 0
 
