@@ -10,7 +10,7 @@ datadir = sys.path[0] + '/src/data'
 modeldir = sys.path[0] + '/src/models'
 label = 'status'
 stop_loss = 2.0
-regression_times = 24 * 30  # horas
+regression_times = 24 * 30 * 2  # horas
 regression_profit_and_loss = 24
 currency = 'USDT'
 

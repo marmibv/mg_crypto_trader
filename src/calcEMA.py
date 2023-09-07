@@ -105,6 +105,7 @@ def calc_RSI(df: pd.DataFrame, close_price='close', window=14, fillna=False, las
         if last_one:
             try:
                 _df = df[[close_price]].tail(window + 100).copy()
+                # _df = df[[close_price]].copy()
                 _count = _df.shape[0]
                 _df['change'] = _df[close_price].diff()
                 _df['gain'] = _df.change.mask(_df.change < 0, 0.0)

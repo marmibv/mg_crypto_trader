@@ -16,8 +16,6 @@ import datetime
 import time
 import traceback
 
-use_cols = ['open_time', 'close']
-
 
 def get_model_name(symbol, estimator='xgboost'):
     '''
@@ -47,6 +45,7 @@ def load_model(symbol, estimator='xgboost'):
     model_name = get_model_name(symbol, estimator)
     print('load_model: Loading model:', model_name)
     model = ca.load_model(model_name, verbose=False)
+    print('load_model: Model obj:', model)
     # model = ca.load_model('xgboost_SL_2.0_RT_720_RPL_24_1')
     return ca, model
 
@@ -171,10 +170,12 @@ def start_predict_engine(symbol, tail=-1, numeric_features=['close', 'rsi'], reg
     experiment, model = load_model(symbol)  # cassification_experiment
     df = get_data(symbol, save_database=False, interval='1h', tail=tail, adjust_index=True)
     df.to_csv('log_after_1st_get_data.csv', sep=';', index=False) if trace else None
+
     df = calc_RSI(df)
     df.dropna(inplace=True)
+
     df.to_csv('log_after_1st_calc_RSI.csv', sep=';', index=False) if trace else None
-    df, _ = regresstion_times(df, numeric_features, regression_times)
+    df, _ = regresstion_times(df, numeric_features + ['rsi'], regression_times)
     df.to_csv('log_after_1st_regresstion_times.csv', sep=';', index=False) if trace else None
     print('start_predict_engine: Info after regresstion_times: ', df.info())
 
@@ -232,7 +233,7 @@ def main(args):
                     symbol = arg.split('=')[1]
 
             sm.send_to_telegram(f'Iniciando Modelo Preditor para Symbol: {symbol}...')
-            start_predict_engine(symbol, tail=regression_times + 14, regression_times=regression_times)
+            start_predict_engine(symbol, numeric_features=data_numeric_fields, tail=regression_times + 50, regression_times=regression_times)
         except Exception as e:
             sm.send_to_telegram('ERRO: ' + str(e))
             traceback.print_exc()
