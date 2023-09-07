@@ -82,7 +82,7 @@ def regresstion_times(df_database, numeric_features=['close'], regression_times=
 
 def get_max_date(df_database):
     max_date = datetime.datetime.strptime('2010-01-01', '%Y-%m-%d')
-    if df_database is not None:
+    if df_database is not None and df_database.shape[0] > 0:
         max_date = pd.to_datetime(df_database['open_time'].max(), unit='ms')
     return max_date
 
@@ -111,10 +111,10 @@ def get_database_name(symbol):
     return datadir + '/' + symbol + '/' + symbol + '.csv'
 
 
-def download_data(save_database=True):
+def download_data(save_database=True, adjust_index=False):
     symbols = pd.read_csv(datadir + '/symbol_list.csv')
     for symbol in symbols['symbol']:
-        get_data(symbol + currency, save_database)
+        get_data(symbol + currency, save_database, adjust_index=adjust_index)
 
 
 def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_index=False,
@@ -125,13 +125,13 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
     df_klines = pd.DataFrame(data=klines, columns=_all_cols)[columns]
     df_klines['symbol'] = symbol
-    df_klines['open_time'] = pd.to_datetime(df_klines['open_time'], unit='ms')
 
     for col in ['open', 'high', 'low', 'close', 'quote_asset_volume', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']:
         if col in df_klines.columns:
             df_klines[col] = df_klines[col].astype(float)
 
     if adjust_index:
+        df_klines['open_time'] = pd.to_datetime(df_klines['open_time'], unit='ms')
         df_klines.index = df_klines['open_time']
         df_klines.index.name = 'ix_open_time'
 
@@ -153,8 +153,8 @@ def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=Fa
         df_database['symbol'] = symbol
         max_date = get_max_date(df_database)
         if save_database:
-            if not os.path.exists(database_name):
-                os.makedirs(database_name)
+            if not os.path.exists(database_name.removesuffix(f'{symbol}.csv')):
+                os.makedirs(database_name.removesuffix(f'{symbol}.csv'))
             df_database.to_csv(database_name, sep=';', index=False)
             print('get_data: Database updated at ', database_name)
     return df_database
