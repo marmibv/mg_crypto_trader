@@ -1,6 +1,12 @@
 from src.myenv import *
 
+import src.send_message as sm
+
 from pycaret.regression.oop import RegressionExperiment
+from pycaret.classification.oop import ClassificationExperiment
+from binance.client import Client
+
+import datetime
 import os
 import pandas as pd
 import plotly.express as px
@@ -77,7 +83,7 @@ def rotate_label(df, rows_to_rotate=-1, label='label_shifted', dropna=False):
     return new_label, df
 
 
-def setup_model(
+def setup_regression_model(
         data: pd.DataFrame,
         label: str,
         train_size=0.7,
@@ -170,8 +176,8 @@ def forecast(data: pd.DataFrame,
             if label not in list_models:
                 print('forecast: Training model for label:', label)
                 target, train_data = rotate_label(_data, -1, label, True)
-                setup, model = setup_model(train_data, target, train_size=train_size, fold=fold,
-                                           regressor_estimator=regressor_estimator, use_gpu=use_gpu, apply_best_analisys=apply_best_analisys)
+                setup, model = setup_regression_model(train_data, target, train_size=train_size, fold=fold,
+                                                      regressor_estimator=regressor_estimator, use_gpu=use_gpu, apply_best_analisys=apply_best_analisys)
                 train_data.drop(columns=target, inplace=True)
                 list_models[label] = {'setup': setup, 'model': model}
                 print('forecast: Training model Done!')
@@ -235,8 +241,8 @@ def forecast2(data: pd.DataFrame,
     for i in range(1, fh + 1):
         if model is None:
             print('forecast: Training model for label:', label) if verbose else None
-            setup, model = setup_model(_data, label, train_size, numeric_features, date_features,
-                                       use_gpu, regressor_estimator, apply_best_analisys, fold, sort, verbose)
+            setup, model = setup_regression_model(_data, label, train_size, numeric_features, date_features,
+                                                  use_gpu, regressor_estimator, apply_best_analisys, fold, sort, verbose)
             print('forecast: Training model Done!') if verbose else None
 
         open_time = open_time + increment_time(interval)
@@ -282,3 +288,184 @@ def plot_predic_model(predict_data, validation_data, regressor):
     fig1.show()
     fig2.show()
     return filtered_data
+
+
+def get_model_name(symbol, estimator='xgboost'):
+    '''
+    return: Last model file stored in MODELS_DIR or None if not exists. Max 999 models per symbol
+    '''
+    model_name = None
+    for i in range(999, 0, -1):
+        model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{regression_profit_and_loss}_{i}'
+        if os.path.exists(f'{model_name}.pkl'):
+            break
+    return model_name
+
+
+def save_model(symbol, model, experiment, estimator='xgboost'):
+    for i in range(1, 999):
+        model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{regression_profit_and_loss}_{i}'
+        if os.path.exists(f'{model_name}.pkl'):
+            continue
+        else:
+            print('save_model: Model file name: ', model_name)
+            experiment.save_model(model, model_name)
+            break
+
+
+def load_model(symbol, estimator='xgboost'):
+    ca = ClassificationExperiment()
+    model_name = get_model_name(symbol, estimator)
+    print('load_model: Loading model:', model_name)
+    model = ca.load_model(model_name, verbose=False)
+    print('load_model: Model obj:', model)
+    # model = ca.load_model('xgboost_SL_2.0_RT_720_RPL_24_1')
+    return ca, model
+
+
+def regresstion_times(df_database, numeric_features=['close'], regression_times=24 * 30, last_one=False):
+    count = df_database.shape[0]
+    new_numeric_features = []
+    if last_one:
+        col_ant = ''
+        col_atual = ''
+        for nf in numeric_features:
+            for i in range(1, regression_times + 1):
+                if i == 1:
+                    col_ant = nf
+                    col_atual = nf + "_" + str(i)
+                elif i == regression_times:
+                    continue
+                else:
+                    col_ant = nf + "_" + str(i)
+                    col_atual = nf + "_" + str(i + 1)
+                df_database.iloc[count:count + 1][col_atual] = df_database.iloc[count - 1:count][col_ant]
+    else:
+        new_numeric_features.append(numeric_features)
+        for nf in numeric_features:
+            for i in range(1, regression_times + 1):
+                col = nf + "_" + str(i)
+                df_database[col] = df_database[nf].shift(i)
+                new_numeric_features.append(col)
+
+        df_database.dropna(inplace=True)
+        df_database = df_database.round(2)
+    return df_database, new_numeric_features
+
+
+def get_max_date(df_database):
+    max_date = datetime.datetime.strptime('2010-01-01', '%Y-%m-%d')
+    if df_database is not None and df_database.shape[0] > 0:
+        max_date = pd.to_datetime(df_database['open_time'].max(), unit='ms')
+    return max_date
+
+
+def get_database(symbol, tail=-1, adjust_index=False, columns=['open_time', 'close']):
+    database_name = get_database_name(symbol)
+    print('get_database: name: ', database_name)
+
+    df_database = pd.DataFrame()
+    if os.path.exists(database_name):
+        df_database = pd.read_csv(database_name, sep=';', parse_dates=date_features, date_parser=date_parser, decimal='.')
+        if adjust_index:
+            df_database.index = df_database['open_time']
+            df_database.index.name = 'ix_open_time'
+
+        df_database = df_database[use_cols]
+    if tail > 0:
+        df_database = df_database.tail(tail).copy()
+    print(f'get_database: count_rows: {df_database.shape[0]} - symbol: {symbol} - tail: {tail} - adjust_index: {adjust_index}')
+
+    print(f'get_database: duplicated: {df_database.duplicated().sum()}')
+    return df_database
+
+
+def get_database_name(symbol):
+    return datadir + '/' + symbol + '/' + symbol + '.csv'
+
+
+def download_data(save_database=True, adjust_index=False):
+    symbols = pd.read_csv(datadir + '/symbol_list.csv')
+    for symbol in symbols['symbol']:
+        get_data(symbol + currency, save_database, adjust_index=adjust_index)
+
+
+def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_index=False,
+               columns=['open_time', 'close']):
+    _all_cols = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume',
+                 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore']
+    client = Client()
+    klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
+    df_klines = pd.DataFrame(data=klines, columns=_all_cols)[columns]
+    df_klines['symbol'] = symbol
+
+    for col in ['open', 'high', 'low', 'close', 'quote_asset_volume', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']:
+        if col in df_klines.columns:
+            df_klines[col] = df_klines[col].astype(float)
+
+    if adjust_index:
+        df_klines['open_time'] = pd.to_datetime(df_klines['open_time'], unit='ms')
+        df_klines.index = df_klines['open_time']
+        df_klines.index.name = 'ix_open_time'
+
+    # print(f'get_klines: count: {df_klines.shape[0]} - max_date: {max_date} - limit: {limit} - adjust_index: {adjust_index}')
+    return df_klines
+
+
+def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=False):
+    database_name = get_database_name(symbol)
+    df_database = get_database(symbol, tail, adjust_index=adjust_index)
+    max_date = get_max_date(df_database)
+
+    print('get_data: Downloading data for symbol: ' + symbol)
+    while (max_date < datetime.datetime.now()):
+        print('get_data: Max date: ', max_date)
+        df_klines = get_klines(symbol, interval=interval, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=adjust_index)
+
+        df_database = pd.concat([df_database, df_klines]).drop_duplicates(keep='last')
+        df_database['symbol'] = symbol
+        max_date = get_max_date(df_database)
+        if save_database:
+            if not os.path.exists(database_name.removesuffix(f'{symbol}.csv')):
+                os.makedirs(database_name.removesuffix(f'{symbol}.csv'))
+            df_database.to_csv(database_name, sep=';', index=False)
+            print('get_data: Database updated at ', database_name)
+    return df_database
+
+
+def send_message(df_predict):
+    message = f'Ticker: {df_predict["symbol"].values[0]} - Operação: {df_predict["prediction_label"].values[0]} - Valor Atual: {df_predict["close"].values[0]}'
+    sm.send_to_telegram(message)
+    print('send_message:', message)
+
+
+def regress_until_diff(data: pd.DataFrame, diff_percent: float, max_regression_profit_and_loss=6):
+    data['close_shift_x'] = 0.0
+    data['diff_shift_x'] = 0.0
+    data['shift_x'] = 0
+    data[label] = 'ESTAVEL'
+    for row_nu in range(1, data.shape[0]):
+        diff = 0
+        i = 1
+
+        while (abs(diff) <= diff_percent):
+            if (i > max_regression_profit_and_loss) or ((row_nu + i) >= data.shape[0]):
+                break
+
+            close = data.iloc[row_nu:row_nu + 1]['close'].values[0]
+            close_px = data.iloc[row_nu + i:row_nu + i + 1]['close'].values[0]
+            diff = -100 * (close - close_px) / close
+            # print(f'ROW_NU: {row_nu} - regresssion_times: {i} - diff: {diff}')
+            i += 1
+
+        data['close_shift_x'].iloc[row_nu:row_nu + 1] = close_px
+        data['diff_shift_x'].iloc[row_nu:row_nu + 1] = diff
+        data['shift_x'].iloc[row_nu:row_nu + 1] = i - 1 if i == max_regression_profit_and_loss + 1 else i
+
+        if diff >= diff_percent:
+            data[label].iloc[row_nu:row_nu + 1] = 'SOBE_' + str(diff_percent)
+
+        elif diff <= -diff_percent:
+            data[label].iloc[row_nu:row_nu + 1] = 'CAI_' + str(diff_percent)
+
+    return data.drop(columns=['close_shift_x', 'diff_shift_x', 'shift_x'])
