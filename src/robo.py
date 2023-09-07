@@ -221,11 +221,16 @@ def main(args):
     while True:
         try:
             symbol = 'BTCUSDT'
-            if (len(args) > 1 and args[1:] == '-download_data'):
-                sm.send_to_telegram('Iniciando MG Crypto Trader...')
-                sm.send_to_telegram('Atualizando base de dados')
-                download_data()
-                sm.send_to_telegram('Base atualizada')
+            for arg in args:
+                if (arg.startswith('-download_data')):
+                    sm.send_to_telegram('Iniciando MG Crypto Trader...')
+                    sm.send_to_telegram('Atualizando base de dados')
+                    download_data()
+                    sm.send_to_telegram('Base atualizada')
+            for arg in args:
+                if (arg.startswith('-symbol=')):
+                    symbol = arg.split('=')[1]
+
             sm.send_to_telegram(f'Iniciando Modelo Preditor para Symbol: {symbol}...')
             start_predict_engine(symbol, tail=regression_times + 14, regression_times=regression_times)
         except Exception as e:
