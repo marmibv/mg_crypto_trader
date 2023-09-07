@@ -36,26 +36,34 @@ def start_train_engine(symbol,
     use_cols = date_features + numeric_features
     print('start_train_engine: use cols: ', use_cols)
     print(f'start_train_engine: reading data - start date: {start_train_date}...')
-    all_data = read_data(f'{datadir}/{symbol}', all_cols=None, use_cols=use_cols)
-    all_data = all_data[(all_data['open_time'] >= start_train_date)].copy()
-
-    print('start_train_engine: Info Data: ', all_data.info())
+    # all_data = read_data(f'{datadir}/{symbol}', all_cols=None, use_cols=use_cols)
+    all_data = get_data(symbol, save_database=False, interval='1h', tail=-1, adjust_index=True, columns=all_cols)
+    all_data = all_data[(all_data['open_time'] >= start_train_date)]  # .copy()
+    print('start_train_engine: info after reading data: ')
+    all_data.info()
 
     if calc_rsi:
         print('start_train_engine: calculating RSI...')
         all_data = calc_RSI(all_data)
         numeric_features.append('rsi')
         all_data.dropna(inplace=True)
+    print('start_train_engine: info after calculating RSI: ')
+    all_data.info()
 
-    print('start_train_engine: calculating regresstion_profit_and_loss...')
+    print('start_train_engine: calculating regress_until_diff...')
     all_data = regress_until_diff(all_data, stop_loss, regression_profit_and_loss)
+    print('start_train_engine: info after calculating regress_until_diff: ')
+    all_data.info()
 
     print('start_train_engine: calculating regresstion_times...')
     all_data, _ = regresstion_times(all_data, numeric_features, regression_times, last_one=False)
-    print('start_train_engine: all_data info: ', all_data.info())
+    print('start_train_engine: info after calculating regresstion_times: ')
+    all_data.info()
 
     print(f'start_train_engine: Filtering Data: start_train_date: {start_train_date} - start_test_date: {start_test_date}')
     train_data = all_data[(all_data['open_time'] >= start_train_date) & (all_data['open_time'] < start_test_date)]
+    print('start_train_engine: info after filtering data: ')
+    all_data.info()
 
     print('start_train_engine: setup model...:')
     ca = ClassificationExperiment()
@@ -85,7 +93,10 @@ def start_train_engine(symbol,
     # predict on test set
     holdout_pred = setup.predict_model(best)
 
+    print('start_train_engine: filtering test data...')
     test_data = all_data[all_data['open_time'] >= start_test_date]
+    print('start_train_engine: info after filtering test data: ')
+    test_data.info()
 
     print('start_train_engine: predicting model...')
     predict = setup.predict_model(best, data=test_data.drop(columns=[label]))

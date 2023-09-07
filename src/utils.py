@@ -392,16 +392,19 @@ def download_data(save_database=True, adjust_index=False):
 
 def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_index=False,
                columns=['open_time', 'close']):
-    _all_cols = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume',
-                 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore']
+
     client = Client()
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
-    df_klines = pd.DataFrame(data=klines, columns=_all_cols)[columns]
+    df_klines = pd.DataFrame(data=klines, columns=all_klines_cols)[columns.remove('symbol')]
     df_klines['symbol'] = symbol
 
-    for col in ['open', 'high', 'low', 'close', 'quote_asset_volume', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']:
+    for col in float_kline_cols:
         if col in df_klines.columns:
             df_klines[col] = df_klines[col].astype(float)
+
+    for col in integer_kline_cols:
+        if col in df_klines.columns:
+            df_klines[col] = df_klines[col].astype(int)
 
     if adjust_index:
         df_klines['open_time'] = pd.to_datetime(df_klines['open_time'], unit='ms')
@@ -412,7 +415,7 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_
     return df_klines
 
 
-def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=False):
+def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=False, columns=['open_time', 'close']):
     database_name = get_database_name(symbol)
     df_database = get_database(symbol, tail, adjust_index=adjust_index)
     max_date = get_max_date(df_database)
@@ -420,7 +423,7 @@ def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=Fa
     print('get_data: Downloading data for symbol: ' + symbol)
     while (max_date < datetime.datetime.now()):
         print('get_data: Max date: ', max_date)
-        df_klines = get_klines(symbol, interval=interval, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=adjust_index)
+        df_klines = get_klines(symbol, interval=interval, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=adjust_index, columns=columns)
 
         df_database = pd.concat([df_database, df_klines]).drop_duplicates(keep='last')
         df_database['symbol'] = symbol

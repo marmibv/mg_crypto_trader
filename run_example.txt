@@ -1,0 +1,1 @@
+python . -train-model -symbol=BTCUSDT -calc-rsi -start-train-date=2023-06-01 -n-jobs=8 -estimator=lr -normalize -verbose

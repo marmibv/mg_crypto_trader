@@ -1,6 +1,13 @@
 import sys
-all_cols = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-            'quote_volume', 'count', 'taker_buy_volume', 'taker_buy_quote_volume', 'ignore', 'symbol']
+
+float_kline_cols = ['open', 'high', 'low', 'close', 'volume', 'quote_asset_volume', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']
+integer_kline_cols = ['number_of_trades', 'ignore']
+date_kline_cols = ['open_time', 'close_time']
+
+
+all_klines_cols = date_kline_cols + float_kline_cols + integer_kline_cols
+
+all_cols = all_klines_cols + ['symbol']
 
 data_numeric_fields = ['open', 'high', 'low', 'volume', 'close']
 date_features = ['open_time']
