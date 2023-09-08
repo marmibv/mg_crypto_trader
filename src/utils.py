@@ -303,6 +303,7 @@ def get_model_name(symbol, estimator='xgboost'):
 
 
 def save_model(symbol, model, experiment, estimator='xgboost'):
+    model_name = ''
     for i in range(1, 999):
         model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{regression_profit_and_loss}_{i}'
         if os.path.exists(f'{model_name}.pkl'):
@@ -311,6 +312,7 @@ def save_model(symbol, model, experiment, estimator='xgboost'):
             print('save_model: Model file name: ', model_name)
             experiment.save_model(model, model_name)
             break
+    return model_name
 
 
 def load_model(symbol, estimator='xgboost'):
@@ -510,9 +512,9 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
 
     operacao_compra = ''
     for row_nu in range(1, _data.shape[0]):
-        open_time = pd.to_datetime(_data.iloc[row_nu:row_nu + 1]['open_time'].values[0]).strftime("%Y-%m-%d %Hh")        
+        open_time = pd.to_datetime(_data.iloc[row_nu:row_nu + 1]['open_time'].values[0]).strftime("%Y-%m-%d %Hh")
         operacao = _data.iloc[row_nu:row_nu + 1]['prediction_label'].values[0]
-        
+
         if (operacao.startswith('SOBE') or operacao.startswith('CAI')) and not comprado:
             operacao_compra = operacao
             valor_compra = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)

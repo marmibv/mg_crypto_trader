@@ -1,5 +1,4 @@
 import sys
-# sys.path.append('../')
 
 from src.utils import *
 from src.calcEMA import calc_RSI
@@ -13,7 +12,6 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import datetime
 
-import time
 import traceback
 
 
@@ -73,7 +71,7 @@ def start_train_engine(symbol,
     df_final_predict, final_model = predict_model(setup, best_model, test_data, ajusted_test_data)
 
     print('start_train_engine: saving model...')
-    save_model(symbol, final_model, setup, estimator)
+    model_name = save_model(symbol, final_model, setup, estimator)
 
     print('start_train_engine: simule trading...')
     start_test_date = df_final_predict['open_time'].min()
@@ -84,11 +82,12 @@ def start_train_engine(symbol,
     saldo_inicial = 100.0
     saldo_final = simule_trading_crypto(df_final_predict, start_test_date, end_test_date, saldo_inicial, stop_loss)
 
-    save_results(symbol, estimator, train_size, start_train_date, start_test_date, regression_times,
+    save_results(model_name, symbol, estimator, train_size, start_train_date, start_test_date, regression_times,
                  regression_profit_and_loss, stop_loss, fold, saldo_inicial, saldo_final)
 
 
-def save_results(symbol,
+def save_results(model_name,
+                 symbol,
                  estimator,
                  train_size,
                  start_train_date,
@@ -100,10 +99,13 @@ def save_results(symbol,
                  saldo_inicial,
                  saldo_final):
 
-    df_resultado_simulacao = pd.read_csv('resultado_simulacao.csv', sep=';')
+    df_resultado_simulacao = pd.DataFrame()
+    if (os.path.exists('resultado_simulacao.csv')):
+        df_resultado_simulacao = pd.read_csv('resultado_simulacao.csv', sep=';')
 
     result_simulado = {}
-    result_simulado['data'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    result_simulado['model_name'] = model_name
+    result_simulado['data'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     result_simulado['symbol'] = symbol
     result_simulado['estimator'] = estimator
     result_simulado['train_size'] = train_size
@@ -116,7 +118,7 @@ def save_results(symbol,
     result_simulado['saldo_inicial'] = saldo_inicial
     result_simulado['saldo_final'] = saldo_final
 
-    df_resultado_simulacao = pd.concat([df_resultado_simulacao, pd.DataFrame(result_simulado)], ignore_index=True)
+    df_resultado_simulacao = pd.concat([df_resultado_simulacao, pd.DataFrame([result_simulado])], ignore_index=True)
     df_resultado_simulacao.sort_values('saldo_final', inplace=True)
 
     df_resultado_simulacao.to_csv('resultado_simulacao.csv', sep=';', index=False)
