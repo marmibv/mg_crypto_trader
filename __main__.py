@@ -1,5 +1,6 @@
 import src.robo as bot
 import src.train as tr
+import time
 import sys
 import traceback
 
@@ -13,7 +14,14 @@ def main(args):
             for arg in args:
                 if (arg.startswith('-train-model')):
                     print('Starting training...')
-                    tr.main(args)
+                    if tr.main(args):
+                        print('Trainin completed ** SUCCESS **')
+                    else:
+                        print('Trainin ** FAILS **')
+                    sys.exit(0)
+            for arg in args:
+                if (arg.startswith('-simule-trading')):
+                    tr.exec_simule_trading(args)
 
             for arg in args:
                 if (arg.startswith('-run-bot')):
@@ -22,6 +30,7 @@ def main(args):
 
         except Exception as e:
             traceback.print_exc()
+            time.sleep(60)
 
 
 if __name__ == '__main__':

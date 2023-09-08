@@ -325,7 +325,7 @@ def load_model(symbol, estimator='xgboost'):
 
 def regresstion_times(df_database, numeric_features=['close'], regression_times=24 * 30, last_one=False):
     count = df_database.shape[0]
-    new_numeric_features = []
+    features_added = []
     if last_one:
         col_ant = ''
         col_atual = ''
@@ -341,16 +341,16 @@ def regresstion_times(df_database, numeric_features=['close'], regression_times=
                     col_atual = nf + "_" + str(i + 1)
                 df_database.iloc[count:count + 1][col_atual] = df_database.iloc[count - 1:count][col_ant]
     else:
-        new_numeric_features.append(numeric_features)
+        # features_added.append(numeric_features)
         for nf in numeric_features:
             for i in range(1, regression_times + 1):
                 col = nf + "_" + str(i)
                 df_database[col] = df_database[nf].shift(i)
-                new_numeric_features.append(col)
+                features_added.append(col)
 
         df_database.dropna(inplace=True)
         df_database = df_database.round(2)
-    return df_database, new_numeric_features
+    return df_database, features_added
 
 
 def get_max_date(df_database):
@@ -366,7 +366,7 @@ def get_database(symbol, tail=-1, adjust_index=False, columns=['open_time', 'clo
 
     df_database = pd.DataFrame()
     if os.path.exists(database_name):
-        df_database = pd.read_csv(database_name, sep=';', parse_dates=date_features, date_parser=date_parser, decimal='.')
+        df_database = pd.read_csv(database_name, sep=';', parse_dates=date_features, date_parser=date_parser, decimal='.', usecols=columns)
         if adjust_index:
             df_database.index = df_database['open_time']
             df_database.index.name = 'ix_open_time'
@@ -375,8 +375,7 @@ def get_database(symbol, tail=-1, adjust_index=False, columns=['open_time', 'clo
     if tail > 0:
         df_database = df_database.tail(tail).copy()
     print(f'get_database: count_rows: {df_database.shape[0]} - symbol: {symbol} - tail: {tail} - adjust_index: {adjust_index}')
-
-    print(f'get_database: duplicated: {df_database.duplicated().sum()}')
+    print(f'get_database: duplicated: {df_database.index.duplicated().sum()}')
     return df_database
 
 
@@ -395,39 +394,58 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_
 
     client = Client()
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
-    df_klines = pd.DataFrame(data=klines, columns=all_klines_cols)[columns.remove('symbol')]
-    df_klines['symbol'] = symbol
-
-    for col in float_kline_cols:
-        if col in df_klines.columns:
-            df_klines[col] = df_klines[col].astype(float)
-
-    for col in integer_kline_cols:
-        if col in df_klines.columns:
-            df_klines[col] = df_klines[col].astype(int)
-
+    if 'symbol' in columns:
+        columns.remove('symbol')
+    df_klines = pd.DataFrame(data=klines, columns=all_klines_cols)[columns]
+    df_klines = parse_type_fields(df_klines)
     if adjust_index:
         df_klines['open_time'] = pd.to_datetime(df_klines['open_time'], unit='ms')
         df_klines.index = df_klines['open_time']
         df_klines.index.name = 'ix_open_time'
 
-    # print(f'get_klines: count: {df_klines.shape[0]} - max_date: {max_date} - limit: {limit} - adjust_index: {adjust_index}')
     return df_klines
+
+
+def parse_type_fields(df):
+    try:
+        if 'symbol' in df.columns:
+            df['symbol'] = pd.Categorical(df['symbol'])
+
+        for col in float_kline_cols:
+            if col in df.columns:
+                df[col] = df[col].astype('float32')
+
+        for col in integer_kline_cols:
+            if col in df.columns:
+                df[col] = df[col].astype('int16')
+
+    except Exception as e:
+        print(e)
+        print(df)
+    return df
 
 
 def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=False, columns=['open_time', 'close']):
     database_name = get_database_name(symbol)
-    df_database = get_database(symbol, tail, adjust_index=adjust_index)
+    df_database = get_database(symbol, tail, adjust_index=adjust_index, columns=columns)
+    df_database = parse_type_fields(df_database)
+
     max_date = get_max_date(df_database)
 
     print('get_data: Downloading data for symbol: ' + symbol)
     while (max_date < datetime.datetime.now()):
-        print('get_data: Max date: ', max_date)
         df_klines = get_klines(symbol, interval=interval, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=adjust_index, columns=columns)
-
-        df_database = pd.concat([df_database, df_klines]).drop_duplicates(keep='last')
+        df_database = pd.concat([df_database, df_klines])
+        df_database.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
+        df_database.sort_index(inplace=True)
+        # if df_klines.index.isin(df_database.index):
+        #    df_database.update(df_klines)
+        # else:
+        #    df_database = pd.concat([df_database, df_klines]).drop_duplicates(keep='last', subset=['open_time'])
         df_database['symbol'] = symbol
+        df_database = parse_type_fields(df_database)
         max_date = get_max_date(df_database)
+        print('get_data: Max date database: ', max_date)
         if save_database:
             if not os.path.exists(database_name.removesuffix(f'{symbol}.csv')):
                 os.makedirs(database_name.removesuffix(f'{symbol}.csv'))
@@ -471,4 +489,48 @@ def regress_until_diff(data: pd.DataFrame, diff_percent: float, max_regression_p
         elif diff <= -diff_percent:
             data[label].iloc[row_nu:row_nu + 1] = 'CAI_' + str(diff_percent)
 
-    return data.drop(columns=['close_shift_x', 'diff_shift_x', 'shift_x'])
+        # end for
+
+    data.drop(columns=['close_shift_x', 'diff_shift_x', 'shift_x'], inplace=True)
+    data[label] = pd.Categorical(data[label])
+
+    return data
+
+
+def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, value: float, stop_loss=3.0):
+    _data = df_predicted.copy()
+    _data.index = _data['open_time']
+    _data = _data[(_data.index >= start_date) & (_data.index <= end_date)]
+    saldo = value
+    operacao = ''
+    comprado = False
+    valor_compra = 0
+    valor_venda = 0
+    diff = 0.0
+
+    operacao_compra = ''
+    for row_nu in range(1, _data.shape[0]):
+        open_time = pd.to_datetime(_data.iloc[row_nu:row_nu + 1]['open_time'].values[0]).strftime("%Y-%m-%d %Hh")        
+        operacao = _data.iloc[row_nu:row_nu + 1]['prediction_label'].values[0]
+        
+        if (operacao.startswith('SOBE') or operacao.startswith('CAI')) and not comprado:
+            operacao_compra = operacao
+            valor_compra = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
+            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra}')
+            comprado = True
+
+        if comprado:
+            diff = 100 * (_data.iloc[row_nu:row_nu + 1]['close'].values[0] - valor_compra) / valor_compra
+            # print(f'[{row_nu}][{operacao_compra}][{open_time}] Diff ==> {round(diff,2)}% - Comprado: {comprado}')
+
+        if (abs(diff) >= stop_loss) and comprado:
+            valor_venda = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
+            if operacao_compra.startswith('SOBE'):
+                saldo += round(saldo * (diff / 100), 2)
+            else:
+                saldo += round(saldo * (-diff / 100), 2)
+            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda} => Diff: {round(diff,2)}% ==> Saldo: {saldo}')
+            comprado = False
+
+    print(f'Saldo: {saldo}')
+    return saldo
