@@ -1,0 +1,1 @@
+python . -run-bot -symbol=BTCUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=lr -normalize -verbose -all-cols -regression-times=0

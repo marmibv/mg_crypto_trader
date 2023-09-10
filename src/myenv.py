@@ -21,10 +21,11 @@ modeldir = sys.path[0] + '/src/models'
 label = 'status'
 stop_loss = 2.0
 regression_times = 24 * 30 * 2  # horas
-regression_profit_and_loss = 24
+times_regression_profit_and_loss = 24
 currency = 'USDT'
 n_jobs = -1
 train_size = 0.7
 estimator = 'xgboost'
+symbol = 'BTCUSDT'
 
 sleep_refresh = 2  # seconds

@@ -21,22 +21,24 @@ def start_train_engine(symbol,
                        start_train_date='2010-01-01',
                        start_test_date=None,
                        numeric_features=myenv.numeric_features,
+                       stop_loss=myenv.stop_loss,
                        regression_times=myenv.regression_times,
-                       regression_profit_and_loss=myenv.regression_profit_and_loss,
+                       times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
                        calc_rsi=True,
                        compare_models=False,
                        n_jobs=-1,
                        use_gpu=False,
                        verbose=False,
                        normalize=True,
-                       fold=3):
+                       fold=3,
+                       parametros=None):
 
     all_data, features_added = prepare_all_data(symbol,
                                                 start_train_date,
                                                 calc_rsi,
                                                 numeric_features,
                                                 True,
-                                                regression_profit_and_loss,
+                                                times_regression_profit_and_loss,
                                                 regression_times)
 
     train_data = prepare_train_data(all_data, start_train_date, start_test_date)
@@ -71,7 +73,7 @@ def start_train_engine(symbol,
     df_final_predict, final_model = predict_model(setup, best_model, test_data, ajusted_test_data)
 
     print('start_train_engine: saving model...')
-    model_name = save_model(symbol, final_model, setup, estimator)
+    model_name = save_model(symbol, final_model, setup, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
 
     print('start_train_engine: simule trading...')
     start_test_date = df_final_predict['open_time'].min()
@@ -83,7 +85,7 @@ def start_train_engine(symbol,
     saldo_final = simule_trading_crypto(df_final_predict, start_test_date, end_test_date, saldo_inicial, stop_loss)
 
     save_results(model_name, symbol, estimator, train_size, start_train_date, start_test_date, regression_times,
-                 regression_profit_and_loss, stop_loss, fold, saldo_inicial, saldo_final)
+                 times_regression_profit_and_loss, stop_loss, fold, saldo_inicial, saldo_final, parametros)
 
 
 def save_results(model_name,
@@ -97,7 +99,8 @@ def save_results(model_name,
                  stop_loss,
                  fold,
                  saldo_inicial,
-                 saldo_final):
+                 saldo_final,
+                 parametros):
 
     df_resultado_simulacao = pd.DataFrame()
     if (os.path.exists('resultado_simulacao.csv')):
@@ -117,6 +120,7 @@ def save_results(model_name,
     result_simulado['fold'] = fold
     result_simulado['saldo_inicial'] = saldo_inicial
     result_simulado['saldo_final'] = saldo_final
+    result_simulado['parametros'] = parametros
 
     df_resultado_simulacao = pd.concat([df_resultado_simulacao, pd.DataFrame([result_simulado])], ignore_index=True)
     df_resultado_simulacao.sort_values('saldo_final', inplace=True)
@@ -129,7 +133,7 @@ def prepare_all_data(symbol,
                      calc_rsi=True,
                      numeric_features=myenv.numeric_features,
                      prepare_profit_and_loss=True,
-                     regression_profit_and_loss=myenv.regression_profit_and_loss,
+                     times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
                      regression_times=myenv.regression_times):
 
     use_cols = date_features + numeric_features
@@ -161,9 +165,9 @@ def prepare_all_data(symbol,
     print('start_train_engine: filter start_train_date all_data duplicated: ', all_data.index.duplicated().sum())
 
     if prepare_profit_and_loss:
-        print('start_train_engine: calculating regress_until_diff...')
-        all_data = regress_until_diff(all_data, stop_loss, regression_profit_and_loss)
-        print('start_train_engine: info after calculating regress_until_diff: ')
+        print('start_train_engine: calculating regression_profit_and_loss...')
+        all_data = regression_profit_and_loss(all_data, label, stop_loss, times_regression_profit_and_loss)
+        print('start_train_engine: info after calculating regression_profit_and_loss: ')
         all_data.info()
         print('start_train_engine: all_data duplicated: ', all_data.index.duplicated().sum())
 
@@ -254,8 +258,9 @@ def main(args):
         start_train_date = '2010-01-01'
         start_test_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
         numeric_features = myenv.data_numeric_fields
+        stop_loss = myenv.stop_loss
         regression_times = myenv.regression_times
-        regression_profit_and_loss = myenv.regression_profit_and_loss
+        regression_profit_and_loss = myenv.times_regression_profit_and_loss
         calc_rsi = False
         compare_models = False
         n_jobs = myenv.n_jobs
@@ -265,14 +270,13 @@ def main(args):
         normalize = False
         fold = 3
         simule_trading = False
-        stop_loss = myenv.stop_loss
 
         for arg in args:
             if (arg.startswith('-download_data')):
-                sm.send_to_telegram('Iniciando MG Crypto Trader...')
-                sm.send_to_telegram('Atualizando base de dados')
+                sm.send_status_to_telegram('Iniciando MG Crypto Trader...')
+                sm.send_status_to_telegram('Atualizando base de dados')
                 download_data()
-                sm.send_to_telegram('Base atualizada')
+                sm.send_status_to_telegram('Base atualizada')
 
         for arg in args:
             if (arg.startswith('-symbol=')):
@@ -291,14 +295,17 @@ def main(args):
                 aux = arg.split('=')[1]
                 numeric_features = aux.split(',')
 
+            if (arg.startswith('-stop-loss=')):
+                stop_loss = float(arg.split('=')[1])
+
             if (arg.startswith('-regression-times=')):
                 regression_times = int(arg.split('=')[1])
 
-            if (arg.startswith('-n-jobs=')):
-                n_jobs = int(arg.split('=')[1])
-
             if (arg.startswith('-regression-profit-and-loss=')):
                 regression_profit_and_loss = float(arg.split('=')[1])
+
+            if (arg.startswith('-n-jobs=')):
+                n_jobs = int(arg.split('=')[1])
 
             if (arg.startswith('-train-size=')):
                 train_size = float(arg.split('=')[1])
@@ -328,18 +335,15 @@ def main(args):
             if (arg.startswith('-simule-trading')):
                 simule_trading = True
 
-            if (arg.startswith('-stop-loss=')):
-                stop_loss = float(arg.split('=')[1])
-
         if simule_trading:
             print(f'Iniciando simulação de trading Symbol: {symbol} - start_train_date: {start_train_date} - start_test_date: {start_test_date}')
             exec_simule_trading(symbol, calc_rsi, numeric_features, start_test_date, 100.0, stop_loss, estimator)
         else:
-            sm.send_to_telegram(f'Iniciando Modelo Preditor para Symbol: {symbol}...')
-            start_train_engine(symbol, estimator, train_size, start_train_date, start_test_date, numeric_features,
-                               regression_times, regression_profit_and_loss, calc_rsi, compare_models, n_jobs, use_gpu, verbose, normalize, fold)
+            sm.send_status_to_telegram(f'Iniciando Modelo Preditor para Symbol: {symbol}...')
+            start_train_engine(symbol, estimator, train_size, start_train_date, start_test_date, numeric_features, stop_loss,
+                               regression_times, regression_profit_and_loss, calc_rsi, compare_models, n_jobs, use_gpu, verbose, normalize, fold, args)
     except Exception as e:
-        sm.send_to_telegram('ERRO: ' + str(e))
+        sm.send_status_to_telegram('ERRO: ' + str(e))
         traceback.print_exc()
         return False
     return True

@@ -1,6 +1,7 @@
 from src.myenv import *
 
 import src.send_message as sm
+import src.myenv as myenv
 
 from pycaret.regression.oop import RegressionExperiment
 from pycaret.classification.oop import ClassificationExperiment
@@ -291,22 +292,23 @@ def plot_predic_model(predict_data, validation_data, regressor):
     return filtered_data
 
 
-def get_model_name(symbol, estimator='xgboost'):
+def get_model_name(symbol, estimator=myenv.estimator, stop_loss=myenv.stop_loss, regression_times=myenv.regression_times, times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
     '''
     return: Last model file stored in MODELS_DIR or None if not exists. Max 999 models per symbol
     '''
+    print('get_model_name: regression_times: ', regression_times)
     model_name = None
     for i in range(999, 0, -1):
-        model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{regression_profit_and_loss}_{i}'
+        model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
         if os.path.exists(f'{model_name}.pkl'):
             break
     return model_name
 
 
-def save_model(symbol, model, experiment, estimator='xgboost'):
+def save_model(symbol, model, experiment, estimator='xgboost', stop_loss=myenv.stop_loss, regression_times=myenv.regression_times, times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
     model_name = ''
     for i in range(1, 999):
-        model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{regression_profit_and_loss}_{i}'
+        model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
         if os.path.exists(f'{model_name}.pkl'):
             continue
         else:
@@ -316,13 +318,13 @@ def save_model(symbol, model, experiment, estimator='xgboost'):
     return model_name
 
 
-def load_model(symbol, estimator='xgboost'):
+def load_model(symbol, estimator=myenv.estimator, stop_loss=myenv.stop_loss, regression_times=myenv.regression_times, times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
     ca = ClassificationExperiment()
-    model_name = get_model_name(symbol, estimator)
+    model_name = get_model_name(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
     print('load_model: Loading model:', model_name)
     model = ca.load_model(model_name, verbose=False)
     print('load_model: Model obj:', model)
-    # model = ca.load_model('xgboost_SL_2.0_RT_720_RPL_24_1')
+
     return ca, model
 
 
@@ -398,7 +400,7 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
     if 'symbol' in columns:
         columns.remove('symbol')
-    print('get_klines: columns: ', columns)
+    # print('get_klines: columns: ', columns)
     df_klines = pd.DataFrame(data=klines, columns=all_klines_cols)[columns]
     df_klines = parse_type_fields(df_klines)
     if adjust_index:
@@ -468,7 +470,25 @@ def send_message(df_predict):
     print('send_message:', message)
 
 
-def regress_until_diff(data: pd.DataFrame, diff_percent: float, max_regression_profit_and_loss=6):
+def times_regression_profit_and_loss(data: pd.DataFrame, label: str, diff_percent: float, max_regression_profit_and_loss=6):
+    col = 'close_shift_'
+    diff_col = 'diff_shift_'
+    cols = []
+    diff_cols = []
+    label_sobe = 'SOBE_' + str(diff_percent)
+    label_cai = 'CAI_' + str(diff_percent)
+    data[label] = pd.Categorical('ESTAVEL')
+    for i in range(1, max_regression_profit_and_loss + 1):
+        data[col + str(i)] = data['close'].shift(i)
+        data[diff_col + str(i)] = (data[col + str(i)] - data['close']) / data['close']
+        data[label] = data[label].append(pd.Categorical(label_sobe)) if abs(
+            data[diff_col + str(i)]) >= diff_percent else data[label].append(pd.Categorical(label_cai))
+        cols.append(col + str(i))
+        diff_cols.append(diff_col + str(i))
+    data['close_shift_x'] = 0.0
+
+
+def regress_until_diff(data: pd.DataFrame, diff_percent: float, max_regression_profit_and_loss=6, label: str = None):
     data['close_shift_x'] = 0.0
     data['diff_shift_x'] = 0.0
     data['shift_x'] = 0
@@ -502,6 +522,36 @@ def regress_until_diff(data: pd.DataFrame, diff_percent: float, max_regression_p
     data.drop(columns=['close_shift_x', 'diff_shift_x', 'shift_x'], inplace=True)
     data[label] = pd.Categorical(data[label])
 
+    return data
+
+
+def regression_profit_and_loss(data: pd.DataFrame, label: str, diff_percent: float, max_regression_profit_and_loss=6):
+    col = 'close_shift_'
+    diff_col = 'diff_shift_'
+    cols = []
+    diff_cols = []
+    label_sobe = 'SOBE_' + str(diff_percent)
+    label_cai = 'CAI_' + str(diff_percent)
+    data[label] = 'ESTAVEL'
+    data_query1_all = None
+    data_query2_all = None
+    for i in range(1, max_regression_profit_and_loss + 1):
+        data[col + str(i)] = data['close'].shift(-i)
+        data[diff_col + str(i)] = 100 * ((data[col + str(i)] - data['close']) / data['close'])
+        if i == 1:
+            data_query1_all = (data[diff_col + str(i)] >= diff_percent)
+            data_query2_all = (data[diff_col + str(i)] <= -diff_percent)
+        else:
+            data_query1_all = (data_query1_all) | (data[diff_col + str(i)] >= diff_percent)
+            data_query2_all = (data_query2_all) | (data[diff_col + str(i)] <= -diff_percent)
+        cols.append(col + str(i))
+        diff_cols.append(diff_col + str(i))
+
+    data.drop(columns=cols + diff_cols, inplace=True)
+    data.loc[data_query1_all, label] = label_sobe
+    data.loc[data_query2_all, label] = label_cai
+
+    data[label] = pd.Categorical(data[label])
     return data
 
 
