@@ -183,14 +183,14 @@ def main(args):
                 if (arg.startswith('-start-test-date=')):
                     start_test_date = arg.split('=')[1]
 
-            sm.send_to_telegram(f'Iniciando Modelo Preditor para Symbol: {symbol}...')
+            sm.send_to_telegram(f'robo:main: Iniciando Modelo Preditor para Symbol: {symbol}...')
             print(f'robo:main: args: {args}')
             print(f'robo:main: numeric_features: {numeric_features}')
             start_predict_engine(symbol, estimator, -1, start_train_date, start_test_date, numeric_features, stop_loss, regression_times,
                                  times_regression_profit_and_loss, calc_rsi)
         except Exception as e:
-            sm.send_status_to_telegram('ERRO: ' + str(e))
             traceback.print_exc()
+            sm.send_status_to_telegram('ERRO: ' + str(e))
         finally:
             gc.collect()
             time.sleep(60)

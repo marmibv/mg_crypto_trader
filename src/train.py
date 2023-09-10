@@ -5,9 +5,7 @@ from src.calcEMA import calc_RSI
 import src.myenv as myenv
 import src.send_message as sm
 
-from binance.client import Client
 from pycaret.classification import ClassificationExperiment
-from sklearn.model_selection import train_test_split
 
 import pandas as pd
 import datetime
