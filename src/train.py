@@ -270,11 +270,12 @@ def main(args):
         simule_trading = False
 
         for arg in args:
-            if (arg.startswith('-download_data')):
+            if (arg.startswith('-download-data')):
                 sm.send_status_to_telegram('Iniciando MG Crypto Trader...')
                 sm.send_status_to_telegram('Atualizando base de dados')
                 download_data()
                 sm.send_status_to_telegram('Base atualizada')
+                sys.exit()
 
         for arg in args:
             if (arg.startswith('-symbol=')):

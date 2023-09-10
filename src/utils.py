@@ -360,6 +360,7 @@ def regresstion_times(df_database, numeric_features=['close'], regression_times=
 
 def get_max_date(df_database):
     max_date = datetime.datetime.strptime('2010-01-01', '%Y-%m-%d')
+    df_database.info()
     if df_database is not None and df_database.shape[0] > 0:
         max_date = pd.to_datetime(df_database['open_time'].max(), unit='ms')
     return max_date
@@ -392,7 +393,7 @@ def get_database_name(symbol):
 def download_data(save_database=True, adjust_index=False):
     symbols = pd.read_csv(datadir + '/symbol_list.csv')
     for symbol in symbols['symbol']:
-        get_data(symbol + currency, save_database, adjust_index=adjust_index)
+        get_data(symbol + currency, save_database, adjust_index=adjust_index, columns=myenv.all_klines_cols)
 
 
 def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_index=False, columns=['open_time', 'close']):

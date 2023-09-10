@@ -91,8 +91,6 @@ def start_predict_engine(symbol,
 
         if comprado:
             diff = 100 * (valor_atual - valor_compra) / valor_compra
-            msg = f'*COMPRADO*: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra:.4f} - valor atual: {valor_atual:.4f} - Margem: {diff:.4f}% - Saldo: {saldo:.4f}'
-            sm.send_status_to_telegram(msg)
 
         if (abs(diff) >= stop_loss) and comprado:
             if operacao_compra.startswith('SOBE'):
@@ -100,7 +98,7 @@ def start_predict_engine(symbol,
             else:
                 saldo += saldo * (-diff / 100)
 
-            msg = f'Venda: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra:.4f} - valor venda: {valor_atual:.4f} - Margem: {diff:.4f}% - Saldo: {saldo:.4f}'
+            msg = f'Venda: symbol: {symbol} - open_time: {open_time} - operação: {operacao_compra} - valor comprado: {valor_compra:.4f} - valor venda: {valor_atual:.4f} - Margem: {diff:.4f}% - Saldo: {saldo:.4f}'
             sm.send_to_telegram(msg)
 
             # Reset variaveis
@@ -122,16 +120,22 @@ def start_predict_engine(symbol,
             operacao_compra = operacao
             rsi = df_predict.tail(1)["rsi"].values[0]
 
-            msg = f'Compra: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra:.4f} - RSI: {rsi} - Saldo: {saldo:.4f}'
+            msg = f'Compra: symbol: {symbol} - open_time: {open_time} - operação: {operacao_compra} - valor comprado: {valor_compra:.4f} - RSI: {rsi} - Saldo: {saldo:.4f}'
             sm.send_to_telegram(msg)
         # Fim calculo compra
 
         time.sleep(sleep_refresh)
         cont += 1
         cont_aviso += 1
-        if cont_aviso > 1000:
+        if cont_aviso > 100:
             sm.send_status_to_telegram('Ainda trabalhando...')
             cont_aviso = 0
+            if comprado:
+                msg = f'*COMPRADO*: symbol: {symbol} - open_time: {open_time} - operação: {operacao_compra} - valor comprado: {valor_compra:.4f} - valor atual: {valor_atual:.4f} - Margem: {diff:.4f}% - Saldo: {saldo:.4f}'
+                sm.send_status_to_telegram(msg)
+            else:
+                msg = f'*NÃO COMPRADO*: symbol: {symbol} - open_time: {open_time} - valor atual: {valor_atual:.4f} - Saldo: {saldo:.4f}'
+                sm.send_status_to_telegram(msg)
 
 
 def main(args):
