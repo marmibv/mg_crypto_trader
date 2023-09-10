@@ -1,9 +1,9 @@
 import requests
 import datetime
+producao = True
 
 
 def send_to_telegram(message):
-    producao = True
 
     apiToken = '5946293152:AAEIR1M3K_hriLGW3DkxWTI_5uaAV-4oNbU'
     chatID = '@mgcryptotrader'
@@ -20,7 +20,6 @@ def send_to_telegram(message):
 
 
 def send_status_to_telegram(message):
-    producao = False
 
     apiToken = '5946293152:AAEIR1M3K_hriLGW3DkxWTI_5uaAV-4oNbU'
     chatID = '@statusmgcrypto'
