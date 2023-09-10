@@ -3,7 +3,7 @@ import datetime
 
 
 def send_to_telegram(message):
-    producao = True
+    producao = False
 
     apiToken = '5946293152:AAEIR1M3K_hriLGW3DkxWTI_5uaAV-4oNbU'
     chatID = '@mgcryptotrader'

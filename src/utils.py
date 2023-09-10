@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import plotly.express as px
 import gc
+import traceback
 
 
 def increment_time(interval='1h'):
@@ -367,13 +368,14 @@ def get_database(symbol, tail=-1, adjust_index=False, columns=['open_time', 'clo
     print('get_database: name: ', database_name)
 
     df_database = pd.DataFrame()
+    print('get_database: columns: ', columns)
     if os.path.exists(database_name):
         df_database = pd.read_csv(database_name, sep=';', parse_dates=date_features, date_parser=date_parser, decimal='.', usecols=columns)
         if adjust_index:
             df_database.index = df_database['open_time']
             df_database.index.name = 'ix_open_time'
 
-        df_database = df_database[use_cols]
+        df_database = df_database[columns]
     if tail > 0:
         df_database = df_database.tail(tail).copy()
     print(f'get_database: count_rows: {df_database.shape[0]} - symbol: {symbol} - tail: {tail} - adjust_index: {adjust_index}')
@@ -391,17 +393,17 @@ def download_data(save_database=True, adjust_index=False):
         get_data(symbol + currency, save_database, adjust_index=adjust_index)
 
 
-def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_index=False,
-               columns=['open_time', 'close']):
-
+def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, adjust_index=False, columns=['open_time', 'close']):
     client = Client()
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
     if 'symbol' in columns:
         columns.remove('symbol')
+    print('get_klines: columns: ', columns)
     df_klines = pd.DataFrame(data=klines, columns=all_klines_cols)[columns]
     df_klines = parse_type_fields(df_klines)
     if adjust_index:
         df_klines['open_time'] = pd.to_datetime(df_klines['open_time'], unit='ms')
+        df_klines.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
         df_klines.index = df_klines['open_time']
         df_klines.index.name = 'ix_open_time'
 
@@ -421,9 +423,13 @@ def parse_type_fields(df):
             if col in df.columns:
                 df[col] = df[col].astype('int16')
 
+        if 'close_time' in df.columns:
+            df['close_time'] = pd.to_datetime(df['close_time'], unit='ms')
+
     except Exception as e:
         print(e)
         print(df)
+        traceback.print_exc()
     return df
 
 

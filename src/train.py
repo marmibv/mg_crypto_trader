@@ -147,11 +147,13 @@ def prepare_all_data(symbol,
     all_data.info()
     print('start_train_engine: all_data duplicated: ', all_data.index.duplicated().sum())
 
-    print('start_train_engine: calculating regresstion_times...')
-    all_data, features_added = regresstion_times(all_data, numeric_features, regression_times, last_one=False)
-    print('start_train_engine: info after calculating regresstion_times: ')
-    all_data.info()
-    print('start_train_engine: all_data duplicated: ', all_data.index.duplicated().sum())
+    features_added = []
+    if regression_times > 0:
+        print('start_train_engine: calculating regresstion_times...')
+        all_data, features_added = regresstion_times(all_data, numeric_features, regression_times, last_one=False)
+        print('start_train_engine: info after calculating regresstion_times: ')
+        all_data.info()
+        print('start_train_engine: all_data duplicated: ', all_data.index.duplicated().sum())
 
     all_data = all_data[(all_data['open_time'] >= start_train_date)]  # .copy()
     print('start_train_engine: info after reading data: ')
@@ -308,7 +310,8 @@ def main(args):
                 calc_rsi = True
 
             if (arg.startswith('-all-cols')):
-                numeric_features = myenv.all_cols
+                aux = float_kline_cols + integer_kline_cols  # + ['close_time']
+                numeric_features = aux
 
             if (arg.startswith('-copare-models')):
                 compare_models = True
