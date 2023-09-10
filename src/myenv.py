@@ -27,5 +27,6 @@ n_jobs = -1
 train_size = 0.7
 estimator = 'xgboost'
 symbol = 'BTCUSDT'
+saldo_inicial = 100
 
 sleep_refresh = 2  # seconds

@@ -17,6 +17,8 @@ import datetime
 import time
 import traceback
 
+import numpy as np
+
 
 def start_predict_engine(symbol,
                          estimator='xgboost',
@@ -28,6 +30,7 @@ def start_predict_engine(symbol,
                          regression_times=myenv.regression_times,
                          times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
                          calc_rsi=True,
+                         saldo=myenv.saldo_inicial,
                          trace=False):
     print('start_predict_engine: regression_times: ', regression_times)
 
@@ -84,26 +87,27 @@ def start_predict_engine(symbol,
 
         # Calculo compra e venda
         valor_atual = df_database.tail(1)["close"].values[0]
-        print(f'start_predict_engine: valor_atual: {valor_atual}')
+        print(f'start_predict_engine: valor_atual: {valor_atual:.4f}')
 
         if comprado:
             diff = 100 * (valor_atual - valor_compra) / valor_compra
-            msg = f'*COMPRADO*: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra} - valor atual: {valor_atual} - Margem: {diff}% - Saldo: {saldo}'
+            msg = f'*COMPRADO*: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra:.4f} - valor atual: {valor_atual:.4f} - Margem: {diff:.4f}% - Saldo: {saldo:.4f}'
             sm.send_status_to_telegram(msg)
 
         if (abs(diff) >= stop_loss) and comprado:
             if operacao_compra.startswith('SOBE'):
-                saldo += round(saldo * (diff / 100), 2)
+                saldo += saldo * (diff / 100)
             else:
-                saldo += round(saldo * (-diff / 100), 2)
+                saldo += saldo * (-diff / 100)
 
-            open_time = df_database.tail(1)["open_time"].values[0]
+            msg = f'Venda: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra:.4f} - valor venda: {valor_atual:.4f} - Margem: {diff:.4f}% - Saldo: {saldo:.4f}'
+            sm.send_to_telegram(msg)
+
+            # Reset variaveis
             comprado = False
             valor_compra = 0
             operacao_compra = ''
 
-            msg = f'Venda: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra} - valor venda: {valor_atual} - Margem: {diff}% - Saldo: {saldo}'
-            sm.send_to_telegram(msg)
         # Fim calculo compra e venda
 
         print('start_predict_engine: start predict_model...')
@@ -118,7 +122,7 @@ def start_predict_engine(symbol,
             operacao_compra = operacao
             rsi = df_predict.tail(1)["rsi"].values[0]
 
-            msg = f'Compra: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra} - RSI: {rsi} - Saldo: {saldo}'
+            msg = f'Compra: symbol: {symbol} - open_time: {open_time} - valor comprado: {valor_compra:.4f} - RSI: {rsi} - Saldo: {saldo:.4f}'
             sm.send_to_telegram(msg)
         # Fim calculo compra
 
@@ -142,6 +146,7 @@ def main(args):
             numeric_features = myenv.data_numeric_fields
             start_train_date = '2010-01-01'
             start_test_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
+            saldo_inicial = myenv.saldo_inicial
 
             for arg in args:
                 if (arg.startswith('-download_data')):
@@ -183,11 +188,15 @@ def main(args):
                 if (arg.startswith('-start-test-date=')):
                     start_test_date = arg.split('=')[1]
 
+                if (arg.startswith('-saldo-inicial=')):
+                    saldo_inicial = float(arg.split('=')[1])
+
             sm.send_to_telegram(f'robo:main: Iniciando Modelo Preditor para Symbol: {symbol}...')
+            sm.send_status_to_telegram(f'robo:main: Iniciando Modelo Preditor para Symbol: {symbol}...')
             print(f'robo:main: args: {args}')
             print(f'robo:main: numeric_features: {numeric_features}')
             start_predict_engine(symbol, estimator, -1, start_train_date, start_test_date, numeric_features, stop_loss, regression_times,
-                                 times_regression_profit_and_loss, calc_rsi)
+                                 times_regression_profit_and_loss, calc_rsi, saldo_inicial)
         except Exception as e:
             traceback.print_exc()
             sm.send_status_to_telegram('ERRO: ' + str(e))
