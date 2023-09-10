@@ -57,6 +57,7 @@ def start_predict_engine(symbol,
     print('start_predict_engine: starting loop monitoring...')
     while True:
         max_date = get_max_date(df_database)
+        open_time = df_database.tail(1)["open_time"].values[0]
         print('start_predict_engine: max_date: ', max_date)
 
         df_klines = get_klines(symbol, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=True, limit=1, columns=use_cols)
