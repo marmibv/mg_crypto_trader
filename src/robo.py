@@ -81,10 +81,10 @@ def start_predict_engine(symbol,
             print('start_predict_engine: df_database.shape: ', df_database.shape)
 
             print('start_predict_engine: calc_rsi...')
-            print(df_database.tail(5))
+            # print(df_database.tail(5))
             if calc_rsi:
                 df_database = calc_RSI(df_database)  # , last_one=True)
-            print(df_database.tail(5))
+            # print(df_database.tail(5))
 
             print(f'start_predict_engine: regression_times {regression_times}...')
             if regression_times > 0:
