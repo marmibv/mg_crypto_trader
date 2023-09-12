@@ -35,13 +35,14 @@ python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -
 # ADA
 # DOGE
 # SOL
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -estimator=knn -symbol=BTCUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -estimator=knn -symbol=ETHUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -estimator=knn -symbol=BNBUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -estimator=knn -symbol=XRPUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -estimator=knn -symbol=ADAUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -estimator=knn -symbol=DOGEUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -estimator=knn -symbol=SOLUSDT
+python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=1 -estimator=knn -symbol=BTCUSDT
+python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=1 -estimator=knn -symbol=ETHUSDT
+python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=1 -estimator=knn -symbol=BNBUSDT
+python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=1 -estimator=knn -symbol=XRPUSDT
+python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=1 -estimator=knn -symbol=ADAUSDT
+python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=1 -estimator=knn -symbol=DOGEUSDT
+python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=1 -estimator=knn -symbol=SOLUSDT
 
+python . -train-model -calc-rsi -normalize -verbose -all-cols -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -estimator=knn -stop-loss=1 -use-all-data-to-train
 
 exit 0

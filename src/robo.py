@@ -68,7 +68,7 @@ def start_predict_engine(symbol,
                 sm.send_status_to_telegram(f'start_predict_engine: reload new model. New model name: {model_name} - Old model name: {model_name_init}')
 
             max_date = get_max_date(df_database)
-            open_time = df_database.tail(1)["open_time"].values[0].dt.strftime('%Y-%m-%d %H').values[0]
+            open_time = df_database.tail(1)["open_time"].dt.strftime('%Y-%m-%d %H').values[0]
             print('start_predict_engine: max_date: ', max_date)
 
             df_klines = get_klines(symbol, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=True, limit=1, columns=use_cols)
@@ -134,7 +134,7 @@ def start_predict_engine(symbol,
             # Fim calculo compra
         except Exception as e:
             traceback.print_exc()
-            sm.send_status_to_telegram('get_klines ERROR: ' + str(e))
+            sm.send_status_to_telegram('ERROR: ' + str(e))
             gc.collect()
         finally:
             time.sleep(sleep_refresh)
@@ -207,8 +207,7 @@ def main(args):
                 if (arg.startswith('-saldo-inicial=')):
                     saldo_inicial = float(arg.split('=')[1])
 
-            sm.send_to_telegram(f'bot:main: Iniciando Modelo Preditor para Symbol: {symbol}...')
-            sm.send_status_to_telegram(f'bot:main: Iniciando Modelo Preditor para Symbol: {symbol}...')
+            sm.send_status_to_telegram(f'bot:main: Iniciando Modelo Preditor para Symbol: {symbol} - Args: {args}')
             print(f'bot:main: args: {args}')
             print(f'bot:main: numeric_features: {numeric_features}')
             start_predict_engine(symbol, estimator, -1, start_train_date, start_test_date, numeric_features, stop_loss, regression_times,
