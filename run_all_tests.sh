@@ -45,4 +45,6 @@ python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regres
 
 python . -train-model -calc-rsi -normalize -verbose -all-cols -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -estimator=knn -stop-loss=1 -use-all-data-to-train
 
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-06-01 -estimator=knn
+
 exit 0

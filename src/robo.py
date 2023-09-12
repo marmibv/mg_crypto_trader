@@ -81,8 +81,10 @@ def start_predict_engine(symbol,
             print('start_predict_engine: df_database.shape: ', df_database.shape)
 
             print('start_predict_engine: calc_rsi...')
+            print(df_database.tail(5))
             if calc_rsi:
-                df_database = calc_RSI(df_database, last_one=True)
+                df_database = calc_RSI(df_database)  # , last_one=True)
+            print(df_database.tail(5))
 
             print(f'start_predict_engine: regression_times {regression_times}...')
             if regression_times > 0:
@@ -100,15 +102,12 @@ def start_predict_engine(symbol,
                     saldo += saldo * (diff / 100)
                 else:
                     saldo += saldo * (-diff / 100)
-
                 msg = f'Venda: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - Valor Venda: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: $ {saldo:.2f}'
                 sm.send_to_telegram(msg)
-
                 # Reset variaveis
                 comprado = False
                 valor_compra = 0
                 operacao_compra = ''
-
             # Fim calculo compra e venda
 
             if not comprado:
