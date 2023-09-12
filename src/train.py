@@ -39,7 +39,8 @@ def start_train_engine(symbol,
                                                 True,
                                                 times_regression_profit_and_loss,
                                                 regression_times,
-                                                use_all_data_to_train)
+                                                use_all_data_to_train,
+                                                stop_loss)
 
     if use_all_data_to_train:
         start_test_date = None
@@ -158,7 +159,8 @@ def prepare_all_data(symbol,
                      prepare_profit_and_loss=True,
                      times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
                      regression_times=myenv.regression_times,
-                     use_all_data_to_train=False):
+                     use_all_data_to_train=False,
+                     stop_loss=myenv.stop_loss):
 
     use_cols = date_features + numeric_features
     print('start_train_engine: use cols: ', use_cols)

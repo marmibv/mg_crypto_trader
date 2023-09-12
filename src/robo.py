@@ -68,31 +68,25 @@ def start_predict_engine(symbol,
                 sm.send_status_to_telegram(f'start_predict_engine: reload new model. New model name: {model_name} - Old model name: {model_name_init}')
 
             max_date = get_max_date(df_database)
-            open_time = df_database.tail(1)["open_time"].dt.strftime('%Y-%m-%d %H').values[0]
+            open_time = df_database.tail(1)["open_time"].dt.strftime('%Y-%m-%d %H:%M:%S').values[0]
             print('start_predict_engine: max_date: ', max_date)
 
             df_klines = get_klines(symbol, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=True, limit=1, columns=use_cols)
 
-            # print('start_predict_engine: df_klines.tail(1): \n', df_klines.tail(1))
             df_database = pd.concat([df_database, df_klines])
             df_database.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
             df_database.sort_index(inplace=True)
             df_database['symbol'] = symbol
             df_database = parse_type_fields(df_database)
             print('start_predict_engine: df_database.shape: ', df_database.shape)
-            # print('start_predict_engine: df_database.tail(1): \n', df_database.tail(1))
 
             print('start_predict_engine: calc_rsi...')
             if calc_rsi:
                 df_database = calc_RSI(df_database, last_one=True)
-                df_database.to_csv(f'log_after_{cont}_calc_RSI.csv', sep=';', index=False) if trace else None
 
             print(f'start_predict_engine: regression_times {regression_times}...')
             if regression_times > 0:
                 df_database, _ = regresstion_times(df_database, numeric_features, regression_times, last_one=True)
-                df_database.to_csv(f'log_after_{cont}_regresstion_times.csv', sep=';', index=False) if trace else None
-
-            df_database[['open_time'] + numeric_features].to_csv('log_experiment_data.log', sep=';', index=False) if trace else None
 
             # Calculo compra e venda
             valor_atual = df_database.tail(1)["close"].values[0]
@@ -107,7 +101,7 @@ def start_predict_engine(symbol,
                 else:
                     saldo += saldo * (-diff / 100)
 
-                msg = f'Venda: Symbol: {symbol} - open_time: {open_time}h - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - Valor Venda: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: $ {saldo:.2f}'
+                msg = f'Venda: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - Valor Venda: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: $ {saldo:.2f}'
                 sm.send_to_telegram(msg)
 
                 # Reset variaveis
@@ -117,21 +111,21 @@ def start_predict_engine(symbol,
 
             # Fim calculo compra e venda
 
-            print('start_predict_engine: start predict_model...')
-            df_predict = experiment.predict_model(model, df_database.tail(1), verbose=False)
-            df_predict.to_csv(f'log_after_{cont}_df_predict.csv', sep=';', index=False) if trace else None
-            # Inicio calculo compra
-            operacao = df_predict['prediction_label'].values[0]
-            print(f'start_predict_engine: operacao predita: {operacao}')
-            if (operacao.startswith('SOBE') or operacao.startswith('CAI')) and not comprado:
-                comprado = True
-                valor_compra = df_predict.tail(1)["close"].values[0]
-                operacao_compra = operacao
-                rsi = df_predict.tail(1)["rsi"].values[0]
+            if not comprado:
+                print('start_predict_engine: start predict_model...')
+                df_predict = experiment.predict_model(model, df_database.tail(1), verbose=False)
+                # Inicio calculo compra
+                operacao = df_predict['prediction_label'].values[0]
+                print(f'start_predict_engine: operacao predita: {operacao}')
+                if (operacao.startswith('SOBE') or operacao.startswith('CAI')):
+                    comprado = True
+                    valor_compra = df_predict.tail(1)["close"].values[0]
+                    operacao_compra = operacao
+                    rsi = df_predict.tail(1)["rsi"].values[0]
 
-                msg = f'Compra: Symbol: {symbol} - open_time: {open_time}h - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - RSI: {rsi:.2f} - PnL: {saldo:.2f}'
-                sm.send_to_telegram(msg)
-            # Fim calculo compra
+                    msg = f'Compra: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - RSI: {rsi:.2f} - PnL: {saldo:.2f}'
+                    sm.send_to_telegram(msg)
+                # Fim calculo compra
         except Exception as e:
             traceback.print_exc()
             sm.send_status_to_telegram('ERROR: ' + str(e))
@@ -143,10 +137,10 @@ def start_predict_engine(symbol,
             if cont_aviso > 100:
                 cont_aviso = 0
                 if comprado:
-                    msg = f'*COMPRADO*: Symbol: {symbol} - open_time: {open_time}h - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - Valor Atual: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: {saldo:.2f}'
+                    msg = f'*COMPRADO*: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - Valor Atual: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: {saldo:.2f}'
                     sm.send_status_to_telegram(msg)
                 else:
-                    msg = f'*NÃO COMPRADO*: Symbol: {symbol} - open_time: {open_time}h - Valor Atual: {valor_atual:.4f} - PnL: {saldo:.2f}'
+                    msg = f'*NÃO COMPRADO*: Symbol: {symbol} - open_time: {open_time} - Valor Atual: {valor_atual:.4f} - PnL: {saldo:.2f}'
                     sm.send_status_to_telegram(msg)
 
 
