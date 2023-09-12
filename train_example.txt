@@ -1,1 +1,39 @@
-python . -train-model -symbol=BTCUSDT -calc-rsi -start-train-date=2023-06-01 -n-jobs=8 -estimator=lr -normalize -verbose
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=lr -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=knn -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=nb -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=dt -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=svm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=gpc -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=mlp -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=ridge -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=rf -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=qda -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=ada -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=gbc -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=lda -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=et -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=catboost -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=xgboost -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=lightgbm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=rbfsvm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+
+
+lr - Logistic Regression
+knn - K Neighbors Classifier
+nb - Naive Bayes
+dt - Decision Tree Classifier
+svm - SVM - Linear Kernel
+rbfsvm - SVM - Radial Kernel
+gpc - Gaussian Process Classifier
+mlp - MLP Classifier
+ridge - Ridge Classifier
+rf - Random Forest Classifier
+qda - Quadratic Discriminant Analysis
+ada - Ada Boost Classifier
+gbc - Gradient Boosting Classifier
+lda - Linear Discriminant Analysis
+et - Extra Trees Classifier
+xgboost - Extreme Gradient Boosting
+lightgbm - Light Gradient Boosting Machine
+catboost - CatBoost Classifier

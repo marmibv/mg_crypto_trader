@@ -442,10 +442,13 @@ def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=Fa
     df_database = parse_type_fields(df_database)
 
     max_date = get_max_date(df_database)
-
-    print('get_data: Downloading data for symbol: ' + symbol)
-    while (max_date < datetime.datetime.now()):
-        df_klines = get_klines(symbol, interval=interval, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=adjust_index, columns=columns)
+    max_date_aux = ''
+    print(f'get_data: Downloading data for symbol: {symbol} - max_date: {max_date}')
+    while (max_date != max_date_aux):
+        print(f'get_data: max_date: {max_date} - max_date_aux: {max_date_aux}')
+        max_date_aux = get_max_date(df_database)
+        print('get_data: Max date database: ', max_date_aux)
+        df_klines = get_klines(symbol, interval=interval, max_date=max_date_aux.strftime('%Y-%m-%d'), adjust_index=adjust_index, columns=columns)
         df_database = pd.concat([df_database, df_klines])
         df_database.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
         df_database.sort_index(inplace=True)
@@ -456,7 +459,6 @@ def get_data(symbol, save_database=True, interval='1h', tail=-1, adjust_index=Fa
         df_database['symbol'] = symbol
         df_database = parse_type_fields(df_database)
         max_date = get_max_date(df_database)
-        print('get_data: Max date database: ', max_date)
         if save_database:
             if not os.path.exists(database_name.removesuffix(f'{symbol}.csv')):
                 os.makedirs(database_name.removesuffix(f'{symbol}.csv'))
@@ -471,62 +473,7 @@ def send_message(df_predict):
     print('send_message:', message)
 
 
-def times_regression_profit_and_loss(data: pd.DataFrame, label: str, diff_percent: float, max_regression_profit_and_loss=6):
-    col = 'close_shift_'
-    diff_col = 'diff_shift_'
-    cols = []
-    diff_cols = []
-    label_sobe = 'SOBE_' + str(diff_percent)
-    label_cai = 'CAI_' + str(diff_percent)
-    data[label] = pd.Categorical('ESTAVEL')
-    for i in range(1, max_regression_profit_and_loss + 1):
-        data[col + str(i)] = data['close'].shift(i)
-        data[diff_col + str(i)] = (data[col + str(i)] - data['close']) / data['close']
-        data[label] = data[label].append(pd.Categorical(label_sobe)) if abs(
-            data[diff_col + str(i)]) >= diff_percent else data[label].append(pd.Categorical(label_cai))
-        cols.append(col + str(i))
-        diff_cols.append(diff_col + str(i))
-    data['close_shift_x'] = 0.0
-
-
-def regress_until_diff(data: pd.DataFrame, diff_percent: float, max_regression_profit_and_loss=6, label: str = None):
-    data['close_shift_x'] = 0.0
-    data['diff_shift_x'] = 0.0
-    data['shift_x'] = 0
-    data[label] = 'ESTAVEL'
-    for row_nu in range(1, data.shape[0]):
-        diff = 0
-        i = 1
-
-        while (abs(diff) <= diff_percent):
-            if (i > max_regression_profit_and_loss) or ((row_nu + i) >= data.shape[0]):
-                break
-
-            close = data.iloc[row_nu:row_nu + 1]['close'].values[0]
-            close_px = data.iloc[row_nu + i:row_nu + i + 1]['close'].values[0]
-            diff = -100 * (close - close_px) / close
-            # print(f'ROW_NU: {row_nu} - regresssion_times: {i} - diff: {diff}')
-            i += 1
-
-        data['close_shift_x'].iloc[row_nu:row_nu + 1] = close_px
-        data['diff_shift_x'].iloc[row_nu:row_nu + 1] = diff
-        data['shift_x'].iloc[row_nu:row_nu + 1] = i - 1 if i == max_regression_profit_and_loss + 1 else i
-
-        if diff >= diff_percent:
-            data[label].iloc[row_nu:row_nu + 1] = 'SOBE_' + str(diff_percent)
-
-        elif diff <= -diff_percent:
-            data[label].iloc[row_nu:row_nu + 1] = 'CAI_' + str(diff_percent)
-
-        # end for
-
-    data.drop(columns=['close_shift_x', 'diff_shift_x', 'shift_x'], inplace=True)
-    data[label] = pd.Categorical(data[label])
-
-    return data
-
-
-def regression_profit_and_loss(data: pd.DataFrame, label: str, diff_percent: float, max_regression_profit_and_loss=6):
+def regression_PnL(data: pd.DataFrame, label: str, diff_percent: float, max_regression_profit_and_loss=6):
     col = 'close_shift_'
     diff_col = 'diff_shift_'
     cols = []
@@ -556,7 +503,7 @@ def regression_profit_and_loss(data: pd.DataFrame, label: str, diff_percent: flo
     return data
 
 
-def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, value: float, stop_loss=3.0):
+def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, value: float, stop_loss=3.0, revert=False):
     _data = df_predicted.copy()
     _data.index = _data['open_time']
     _data = _data[(_data.index >= start_date) & (_data.index <= end_date)]
@@ -584,10 +531,17 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
 
         if (abs(diff) >= stop_loss) and comprado:
             valor_venda = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
-            if operacao_compra.startswith('SOBE'):
-                saldo += round(saldo * (diff / 100), 2)
+            if revert:
+                if operacao_compra.startswith('SOBE'):
+                    saldo -= round(saldo * (diff / 100), 2)
+                else:
+                    saldo -= round(saldo * (-diff / 100), 2)
             else:
-                saldo += round(saldo * (-diff / 100), 2)
+                if operacao_compra.startswith('SOBE'):
+                    saldo += round(saldo * (diff / 100), 2)
+                else:
+                    saldo += round(saldo * (-diff / 100), 2)
+
             print(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda} => Diff: {round(diff,2)}% ==> Saldo: {saldo}')
             comprado = False
 

@@ -168,3 +168,8 @@ catboost_info
 *catboost_info*
 catboost_info/
 ./catboost_info
+
+bkp_local_model
+*bkp_local_model*
+bkp_local_model/
+./bkp_local_model
