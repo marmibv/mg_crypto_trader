@@ -1,8 +1,15 @@
 python . -run-bot -symbol=ADAUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=knn -normalize -verbose -all-cols -regression-times=0 -stop-loss=1
 python . -run-bot -symbol=BNBUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=knn -normalize -verbose -all-cols -regression-times=0 -stop-loss=1
-python . -run-bot -symbol=BTCUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=knn -normalize -verbose -all-cols -regression-times=0 -stop-loss=1
+python . -run-bot -calc-rsi -start-train-date=2023-01-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=BTCUSDT
 python . -run-bot -symbol=DOGEUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=knn -normalize -verbose -all-cols -regression-times=0 -stop-loss=1
 python . -run-bot -symbol=ETHUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=knn -normalize -verbose -all-cols -regression-times=0 -stop-loss=1
 python . -run-bot -symbol=SOLUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=knn -normalize -verbose -all-cols -regression-times=0 -stop-loss=1
 python . -run-bot -symbol=XRPUSDT -calc-rsi -start-train-date=2010-01-01 -n-jobs=20 -estimator=knn -normalize -verbose -all-cols -regression-times=0 -stop-loss=1
 
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=ADAUSDT
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=BNBUSDT
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=BTCUSDT
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=DOGEUSDT
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=ETHUSDT
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=SOLUSDT
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=XRPUSDT

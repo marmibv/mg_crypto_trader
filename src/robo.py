@@ -71,7 +71,7 @@ def start_predict_engine(symbol,
             open_time = df_database.tail(1)["open_time"].dt.strftime('%Y-%m-%d %H:%M:%S').values[0]
             print('start_predict_engine: max_date: ', max_date)
 
-            df_klines = get_klines(symbol, max_date=max_date.strftime('%Y-%m-%d'), adjust_index=True, limit=1, columns=use_cols)
+            df_klines = get_klines(symbol, max_date=max_date.strftime('%Y-%m-%d'), limit=1, columns=use_cols)
 
             df_database = pd.concat([df_database, df_klines])
             df_database.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
@@ -81,10 +81,10 @@ def start_predict_engine(symbol,
             print('start_predict_engine: df_database.shape: ', df_database.shape)
 
             print('start_predict_engine: calc_rsi...')
-            #print(df_database.tail(5))
+            # print(df_database.tail(5))
             if calc_rsi:
                 df_database = calc_RSI(df_database)  # , last_one=True)
-            #print(df_database.tail(5))
+            # print(df_database.tail(5))
 
             print(f'start_predict_engine: regression_times {regression_times}...')
             if regression_times > 0:
@@ -125,6 +125,7 @@ def start_predict_engine(symbol,
                     msg = f'Compra: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - RSI: {rsi:.2f} - PnL: {saldo:.2f}'
                     sm.send_to_telegram(msg)
                 # Fim calculo compra
+                gc.collect()
         except Exception as e:
             traceback.print_exc()
             sm.send_status_to_telegram('ERROR: ' + str(e))

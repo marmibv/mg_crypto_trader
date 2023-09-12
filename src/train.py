@@ -30,7 +30,8 @@ def start_train_engine(symbol,
                        normalize=True,
                        fold=3,
                        use_all_data_to_train=False,
-                       parametros=None):
+                       parametros=None,
+                       no_tune=False,):
 
     all_data, features_added = prepare_all_data(symbol,
                                                 start_train_date,
@@ -78,8 +79,10 @@ def start_train_engine(symbol,
         print('start_train_engine: creating model...')
         best_model = setup.create_model(estimator)
 
-    print('start_train_engine: tuning model...')
-    tune_model = setup.tune_model(best_model)
+    tune_model = best_model
+    if not no_tune:
+        print('start_train_engine: tuning model...')
+        tune_model = setup.tune_model(best_model)
 
     print('start_train_engine: finalizing model...')
     final_model = setup.finalize_model(tune_model)
@@ -107,7 +110,7 @@ def start_train_engine(symbol,
         saldo_final = simule_trading_crypto(df_final_predict, start_test_date, end_test_date, saldo_inicial, stop_loss)
 
     save_results(model_name, symbol, estimator, train_size, start_train_date, start_test_date, regression_times,
-                 times_regression_profit_and_loss, stop_loss, fold, saldo_inicial, saldo_final, use_all_data_to_train, parametros)
+                 times_regression_profit_and_loss, stop_loss, fold, saldo_inicial, saldo_final, use_all_data_to_train, no_tune, parametros)
 
 
 def save_results(model_name,
@@ -123,6 +126,7 @@ def save_results(model_name,
                  saldo_inicial,
                  saldo_final,
                  use_all_data_to_train,
+                 no_tune,
                  parametros):
 
     df_resultado_simulacao = pd.DataFrame()
@@ -145,6 +149,7 @@ def save_results(model_name,
     result_simulado['saldo_final'] = saldo_final
     result_simulado['parametros'] = parametros
     result_simulado['use-all-data-to-train'] = use_all_data_to_train
+    result_simulado['no-tune'] = no_tune
 
     df_resultado_simulacao = pd.concat([df_resultado_simulacao, pd.DataFrame([result_simulado])], ignore_index=True)
     df_resultado_simulacao.sort_values('saldo_final', inplace=True)
@@ -165,7 +170,7 @@ def prepare_all_data(symbol,
     use_cols = date_features + numeric_features
     print('start_train_engine: use cols: ', use_cols)
     print(f'start_train_engine: reading data - start date: {start_train_date}...')
-    all_data = get_data(symbol, save_database=False, interval='1h', tail=-1, adjust_index=True, columns=use_cols)
+    all_data = get_data(symbol, save_database=False, interval='1h', tail=-1, columns=use_cols)
     print('start_train_engine: get_data  all_data duplicated: ', all_data.index.duplicated().sum())
 
     if calc_rsi:
@@ -295,12 +300,13 @@ def main(args):
         simule_trading = False
         use_all_data_to_train = False
         revert = False
+        no_tune = False
 
         for arg in args:
             if (arg.startswith('-download-data')):
                 sm.send_status_to_telegram('Iniciando MG Crypto Trader...')
                 sm.send_status_to_telegram('Atualizando base de dados')
-                download_data()
+                download_data(save_database=True, parse_data=False)
                 sm.send_status_to_telegram('Base atualizada')
                 sys.exit()
 
@@ -328,7 +334,7 @@ def main(args):
                 regression_times = int(arg.split('=')[1])
 
             if (arg.startswith('-regression-profit-and-loss=')):
-                times_regression_profit_and_loss = float(arg.split('=')[1])
+                times_regression_profit_and_loss = int(arg.split('=')[1])
 
             if (arg.startswith('-n-jobs=')):
                 n_jobs = int(arg.split('=')[1])
@@ -367,6 +373,9 @@ def main(args):
             if (arg.startswith('-revert')):
                 revert = True
 
+            if (arg.startswith('-no-tune')):
+                no_tune = True
+
         if simule_trading:
             print(f'Iniciando simulação de trading Symbol: {symbol} - start_train_date: {start_train_date} - start_test_date: {start_test_date}')
             exec_simule_trading(symbol, calc_rsi, numeric_features, start_test_date, 100.0, stop_loss,
@@ -374,7 +383,7 @@ def main(args):
         else:
             sm.send_status_to_telegram(f'Iniciando Modelo Preditor para Symbol: {symbol}...')
             start_train_engine(symbol, estimator, train_size, start_train_date, start_test_date, numeric_features, stop_loss,
-                               regression_times, times_regression_profit_and_loss, calc_rsi, compare_models, n_jobs, use_gpu, verbose, normalize, fold, use_all_data_to_train, args)
+                               regression_times, times_regression_profit_and_loss, calc_rsi, compare_models, n_jobs, use_gpu, verbose, normalize, fold, use_all_data_to_train, args, no_tune)
     except Exception as e:
         traceback.print_exc()
         sm.send_status_to_telegram('ERRO: ' + str(e))
