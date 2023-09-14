@@ -206,7 +206,7 @@ def prepare_all_data(symbol,
 
     if not use_all_data_to_train:
         all_data = all_data[(all_data['open_time'] >= start_train_date)]  # .copy()
-        print('start_train_engine: info after reading data: ')
+        print(f'start_train_engine: shape after filtering data: {all_data.shape}  - start_train_date: {start_train_date}')
         all_data.info() if verbose else None
         print('start_train_engine: filter start_train_date all_data duplicated: ', all_data.index.duplicated().sum())
 
