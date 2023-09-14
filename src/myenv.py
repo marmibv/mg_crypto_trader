@@ -11,6 +11,7 @@ all_klines_cols = ['open_time', 'open', 'high', 'low', 'close', 'volume', 'close
                    'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore']
 
 all_cols = all_klines_cols + ['symbol']
+all_cols.remove('ignore')
 
 data_numeric_fields = ['open', 'high', 'low', 'volume', 'close']
 date_features = ['open_time']

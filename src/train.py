@@ -18,9 +18,10 @@ def start_train_engine(symbol,
                        train_size=myenv.train_size,
                        start_train_date='2010-01-01',
                        start_test_date=None,
-                       numeric_features=myenv.numeric_features,
+                       numeric_features=myenv.data_numeric_fields,
                        stop_loss=myenv.stop_loss,
                        regression_times=myenv.regression_times,
+                       regression_features=myenv.data_numeric_fields,
                        times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
                        calc_rsi=True,
                        compare_models=False,
@@ -41,7 +42,9 @@ def start_train_engine(symbol,
                                                 times_regression_profit_and_loss,
                                                 regression_times,
                                                 use_all_data_to_train,
-                                                stop_loss)
+                                                stop_loss,
+                                                verbose,
+                                                regression_features)
 
     if use_all_data_to_train:
         start_test_date = None
@@ -66,7 +69,8 @@ def start_train_engine(symbol,
                      normalize=normalize,
                      use_gpu=use_gpu,
                      verbose=verbose,
-                     n_jobs=n_jobs,)
+                     n_jobs=n_jobs,
+                     log_experiment=False)
 
     # Accuracy	AUC	Recall	Prec.	F1	Kappa	MCC
     best_model = None
@@ -98,7 +102,7 @@ def start_train_engine(symbol,
         saldo_final = 0.0
     else:
         test_data, ajusted_test_data = prepare_test_data(all_data, start_test_date)
-        df_final_predict = validate_score_test_data(setup, best_model, test_data, ajusted_test_data)
+        df_final_predict, res_score = validate_score_test_data(setup, best_model, label, test_data, ajusted_test_data)
 
         print('start_train_engine: simule trading...')
         start_test_date = df_final_predict['open_time'].min()
@@ -109,8 +113,8 @@ def start_train_engine(symbol,
         saldo_inicial = 100.0
         saldo_final = simule_trading_crypto(df_final_predict, start_test_date, end_test_date, saldo_inicial, stop_loss)
 
-    save_results(model_name, symbol, estimator, train_size, start_train_date, start_test_date, regression_times,
-                 times_regression_profit_and_loss, stop_loss, fold, saldo_inicial, saldo_final, use_all_data_to_train, no_tune, parametros)
+    save_results(model_name, symbol, estimator, train_size, start_train_date, start_test_date, numeric_features, regression_times, regression_features,
+                 times_regression_profit_and_loss, stop_loss, fold, saldo_inicial, saldo_final, use_all_data_to_train, no_tune, res_score, parametros)
 
 
 def save_results(model_name,
@@ -119,7 +123,9 @@ def save_results(model_name,
                  train_size,
                  start_train_date,
                  start_test_date,
+                 numeric_features,
                  regression_times,
+                 regression_features,
                  times_regression_profit_and_loss,
                  stop_loss,
                  fold,
@@ -127,6 +133,7 @@ def save_results(model_name,
                  saldo_final,
                  use_all_data_to_train,
                  no_tune,
+                 res_score,
                  parametros):
 
     df_resultado_simulacao = pd.DataFrame()
@@ -141,7 +148,9 @@ def save_results(model_name,
     result_simulado['train_size'] = train_size
     result_simulado['start_train_date'] = start_train_date
     result_simulado['start_test_date'] = start_test_date
+    result_simulado['numeric_features'] = numeric_features
     result_simulado['regression_times'] = regression_times
+    result_simulado['regression_features'] = regression_features
     result_simulado['times_regression_profit_and_loss'] = times_regression_profit_and_loss
     result_simulado['stop_loss'] = stop_loss
     result_simulado['fold'] = fold
@@ -150,6 +159,9 @@ def save_results(model_name,
     result_simulado['parametros'] = parametros
     result_simulado['use-all-data-to-train'] = use_all_data_to_train
     result_simulado['no-tune'] = no_tune
+    if res_score is not None:
+        for i in range(0, len(res_score["status"].values)):
+            result_simulado['score'] = f'{res_score["status"].values[i]}={res_score["_score"].values[i]}'
 
     df_resultado_simulacao = pd.concat([df_resultado_simulacao, pd.DataFrame([result_simulado])], ignore_index=True)
     df_resultado_simulacao.sort_values('saldo_final', inplace=True)
@@ -160,12 +172,14 @@ def save_results(model_name,
 def prepare_all_data(symbol,
                      start_train_date,
                      calc_rsi=True,
-                     numeric_features=myenv.numeric_features,
+                     numeric_features=myenv.data_numeric_fields,
                      prepare_profit_and_loss=True,
                      times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
                      regression_times=myenv.regression_times,
                      use_all_data_to_train=False,
-                     stop_loss=myenv.stop_loss):
+                     stop_loss=myenv.stop_loss,
+                     verbose=False,
+                     regression_features=myenv.data_numeric_fields):
 
     use_cols = date_features + numeric_features
     print('start_train_engine: use cols: ', use_cols)
@@ -179,44 +193,44 @@ def prepare_all_data(symbol,
         numeric_features.append('rsi')
         all_data.dropna(inplace=True)
         print('start_train_engine: info after calculating RSI: ')
-        all_data.info()
+        all_data.info() if verbose else None
         print('start_train_engine: all_data duplicated: ', all_data.index.duplicated().sum())
 
     features_added = []
     if regression_times > 0:
         print('start_train_engine: calculating regresstion_times...')
-        all_data, features_added = regresstion_times(all_data, numeric_features, regression_times, last_one=False)
+        all_data, features_added = regresstion_times(all_data, regression_features, regression_times, last_one=False)
         print('start_train_engine: info after calculating regresstion_times: ')
-        all_data.info()
+        all_data.info() if verbose else None
         print('start_train_engine: all_data duplicated: ', all_data.index.duplicated().sum())
 
     if not use_all_data_to_train:
         all_data = all_data[(all_data['open_time'] >= start_train_date)]  # .copy()
         print('start_train_engine: info after reading data: ')
-        all_data.info()
+        all_data.info() if verbose else None
         print('start_train_engine: filter start_train_date all_data duplicated: ', all_data.index.duplicated().sum())
 
     if prepare_profit_and_loss:
         print('start_train_engine: calculating regression_profit_and_loss...')
         all_data = regression_PnL(all_data, label, stop_loss, times_regression_profit_and_loss)
         print('start_train_engine: info after calculating regression_profit_and_loss: ')
-        all_data.info()
+        all_data.info() if verbose else None
         print('start_train_engine: all_data duplicated: ', all_data.index.duplicated().sum())
 
     return all_data, features_added
 
 
-def prepare_train_data(all_data, start_train_date, start_test_date):
+def prepare_train_data(all_data, start_train_date, start_test_date, verbose=False):
     print(f'start_train_engine: Filtering train_data: start_train_date: {start_train_date} - start_test_date: {start_test_date}')
     train_data = all_data[(all_data['open_time'] >= start_train_date) & (all_data['open_time'] < start_test_date)]
     print('start_train_engine: info after filtering train_data: ')
-    train_data.info()
+    train_data.info() if verbose else None
     print('start_train_engine: train_data duplicated: ', train_data.index.duplicated().sum())
 
     return train_data
 
 
-def prepare_test_data(all_data, start_test_date):
+def prepare_test_data(all_data, start_test_date, verbose=False):
     if start_test_date is None:
         print(f'start_train_engine: start_test_date is None: ')
         return None
@@ -224,7 +238,7 @@ def prepare_test_data(all_data, start_test_date):
     print(f'start_train_engine: Filtering test_data: start_test_date: {start_test_date}')
     test_data = all_data[all_data['open_time'] >= start_test_date]
     print('start_train_engine: info after filtering test_data: ')
-    test_data.info()
+    test_data.info() if verbose else None
     print('start_train_engine: test_data duplicated: ', test_data.index.duplicated().sum())
 
     print('start_train_engine: predicting model...')
@@ -234,9 +248,11 @@ def prepare_test_data(all_data, start_test_date):
     return test_data, ajusted_test_data
 
 
-def validate_score_test_data(setup, final_model, test_data, ajusted_test_data):
+def validate_score_test_data(exp, final_model, label, test_data, ajusted_test_data):
     print('start_train_engine: predicting final model...')
-    df_final_predict = setup.predict_model(final_model, data=ajusted_test_data)
+    df_final_predict = exp.predict_model(final_model, data=ajusted_test_data)
+
+    res_score = None
 
     if test_data is not None:
         df_final_predict[label] = test_data[label]
@@ -244,20 +260,23 @@ def validate_score_test_data(setup, final_model, test_data, ajusted_test_data):
 
         print('Score Mean:', df_final_predict['_score'].mean())
         print('Score Group:', df_final_predict[[label, '_score']].groupby(label).mean())
+        res_score = df_final_predict[[label, '_score']].groupby(label).mean().copy()
 
-    return df_final_predict
+    return df_final_predict, res_score
 
 
 def exec_simule_trading(symbol,
                         calc_rsi=True,
-                        numeric_features=myenv.numeric_features,
+                        numeric_features=myenv.data_numeric_fields,
                         start_test_date=None,
                         start_value=100.0,
                         stop_loss=myenv.stop_loss,
                         estimator=myenv.estimator,
                         regression_times=myenv.regression_times,
+                        regression_features=myenv.data_numeric_fields,
                         times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
-                        revert=False):
+                        revert=False,
+                        verbose=False):
 
     all_data, _ = prepare_all_data(symbol,
                                    start_test_date,
@@ -265,11 +284,15 @@ def exec_simule_trading(symbol,
                                    numeric_features,
                                    False,
                                    times_regression_profit_and_loss,
-                                   regression_times)
+                                   regression_times,
+                                   False,
+                                   stop_loss,
+                                   verbose,
+                                   regression_features)
 
     experiment, model = load_model(symbol, estimator, stop_loss, regression_times, )
 
-    df_final_predict = validate_score_test_data(experiment, model, None, all_data)
+    df_final_predict, _ = validate_score_test_data(experiment, model, None, all_data)
 
     start_test_date = df_final_predict['open_time'].min()
     end_test_date = df_final_predict['open_time'].max()
@@ -287,7 +310,8 @@ def main(args):
         start_test_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
         numeric_features = myenv.data_numeric_fields
         stop_loss = myenv.stop_loss
-        regression_times = myenv.regression_times
+        regression_times = []
+        regression_features = myenv.data_numeric_fields
         times_regression_profit_and_loss = myenv.times_regression_profit_and_loss
         calc_rsi = False
         compare_models = False
@@ -333,6 +357,10 @@ def main(args):
             if (arg.startswith('-regression-times=')):
                 regression_times = int(arg.split('=')[1])
 
+            if (arg.startswith('-regression-features=')):
+                aux = arg.split('=')[1]
+                regression_features = aux.split(',')
+
             if (arg.startswith('-regression-profit-and-loss=')):
                 times_regression_profit_and_loss = int(arg.split('=')[1])
 
@@ -376,14 +404,16 @@ def main(args):
             if (arg.startswith('-no-tune')):
                 no_tune = True
 
+        regression_features = numeric_features if len(regression_features) == 0 else regression_features
+
         if simule_trading:
             print(f'Iniciando simulação de trading Symbol: {symbol} - start_train_date: {start_train_date} - start_test_date: {start_test_date}')
             exec_simule_trading(symbol, calc_rsi, numeric_features, start_test_date, 100.0, stop_loss,
-                                estimator, regression_times, times_regression_profit_and_loss, revert)
+                                estimator, regression_times, regression_features, times_regression_profit_and_loss, revert, verbose)
         else:
             sm.send_status_to_telegram(f'Iniciando Modelo Preditor para Symbol: {symbol}...')
             start_train_engine(symbol, estimator, train_size, start_train_date, start_test_date, numeric_features, stop_loss,
-                               regression_times, times_regression_profit_and_loss, calc_rsi, compare_models, n_jobs, use_gpu, verbose, normalize, fold, use_all_data_to_train, args, no_tune)
+                               regression_times, regression_features, times_regression_profit_and_loss, calc_rsi, compare_models, n_jobs, use_gpu, verbose, normalize, fold, use_all_data_to_train, args, no_tune)
     except Exception as e:
         traceback.print_exc()
         sm.send_status_to_telegram('ERRO: ' + str(e))

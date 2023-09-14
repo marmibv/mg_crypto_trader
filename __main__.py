@@ -1,9 +1,14 @@
+import os
+import logging
+
+os.environ["PYCARET_CUSTOM_LOGGING_LEVEL"] = "CRITICAL"
+logging.basicConfig(filename='crypto_logs.log', encoding='utf-8', level=logging.CRITICAL)
+
 import src.robo as bot
 import src.train as tr
 import time
 import sys
 import traceback
-
 # Now you can use the 'argument' variable in your script
 print("Argument provided:", sys.argv[1:])
 

@@ -296,7 +296,6 @@ def get_model_name(symbol, estimator=myenv.estimator, stop_loss=myenv.stop_loss,
     '''
     return: Last model file stored in MODELS_DIR or None if not exists. Max 999 models per symbol
     '''
-    print('get_model_name: regression_times: ', regression_times)
     model_name = None
     for i in range(999, 0, -1):
         model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
@@ -328,13 +327,14 @@ def load_model(symbol, estimator=myenv.estimator, stop_loss=myenv.stop_loss, reg
     return ca, model
 
 
-def regresstion_times(df_database, numeric_features=['close'], regression_times=24 * 30, last_one=False):
+def regresstion_times(df_database, regression_features=['close'], regression_times=24 * 30, last_one=False):
+    print('regresstion_times: regression_features: ', regression_features)
     count = df_database.shape[0]
     features_added = []
     if last_one:
         col_ant = ''
         col_atual = ''
-        for nf in numeric_features:
+        for nf in regression_features:
             for i in range(1, regression_times + 1):
                 if i == 1:
                     col_ant = nf
@@ -346,8 +346,8 @@ def regresstion_times(df_database, numeric_features=['close'], regression_times=
                     col_atual = nf + "_" + str(i + 1)
                 df_database.iloc[count:count + 1][col_atual] = df_database.iloc[count - 1:count][col_ant]
     else:
-        # features_added.append(numeric_features)
-        for nf in numeric_features:
+        # features_added.append(regression_features)
+        for nf in regression_features:
             for i in range(1, regression_times + 1):
                 col = nf + "_" + str(i)
                 df_database[col] = df_database[nf].shift(i)
@@ -360,7 +360,6 @@ def regresstion_times(df_database, numeric_features=['close'], regression_times=
 
 def get_max_date(df_database):
     max_date = datetime.datetime.strptime('2010-01-01', '%Y-%m-%d')
-    df_database.info()
     if df_database is not None and df_database.shape[0] > 0:
         max_date = pd.to_datetime(df_database['open_time'].max(), unit='ms')
     return max_date
@@ -406,6 +405,7 @@ def adjust_index(df):
 
 
 def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, columns=['open_time', 'close'], parse_data=True):
+    start_time = datetime.datetime.now()
     client = Client()
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
     if 'symbol' in columns:
@@ -415,7 +415,9 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, columns
     if parse_data:
         df_klines = parse_type_fields(df_klines, parse_dates=True)
     df_klines = adjust_index(df_klines)
-
+    delta = datetime.datetime.now() - start_time
+    # Print the delta time in days, hours, minutes, and seconds
+    print(f"get_klines: shape: {df_klines.shape} - Delta time: {delta.seconds % 60} seconds")
     return df_klines
 
 
@@ -476,16 +478,18 @@ def send_message(df_predict):
     print('send_message:', message)
 
 
-def set_status_PL(row, stop_loss, max_regression_profit_and_loss, prefix_col_diff):
+def set_status_PL(row, stop_loss, max_regression_profit_and_loss, prefix_col_diff, strategy='SOBE_CAI'):
     for s in range(1, max_regression_profit_and_loss + 1):
-        if row[f'{prefix_col_diff}{s}'] >= stop_loss:
-            return f'SOBE_{stop_loss}'
-        if row[f'{prefix_col_diff}{s}'] <= -stop_loss:
-            return f'CAI_{stop_loss}'
+        if (strategy == 'SOBE') or (strategy == 'SOBE_CAI'):
+            if row[f'{prefix_col_diff}{s}'] >= stop_loss:
+                return f'SOBE_{stop_loss}'
+        if (strategy == 'CAI') or (strategy == 'SOBE_CAI'):
+            if row[f'{prefix_col_diff}{s}'] <= -stop_loss:
+                return f'CAI_{stop_loss}'
     return 'ESTAVEL'
 
 
-def regression_PnL(data: pd.DataFrame, label: str, diff_percent: float, max_regression_profit_and_loss=6, drop_na=True, drop_calc_cols=True):
+def regression_PnL(data: pd.DataFrame, label: str, diff_percent: float, max_regression_profit_and_loss=6, drop_na=True, drop_calc_cols=True, strategy=None):
     col = 'c_'
     diff_col = 'd_'
     cols = []
@@ -496,13 +500,20 @@ def regression_PnL(data: pd.DataFrame, label: str, diff_percent: float, max_regr
         cols.append(col + str(i))
         diff_cols.append(diff_col + str(i))
 
-    data[label] = data.apply(set_status_PL, axis=1, args=[diff_percent, max_regression_profit_and_loss, diff_col])
+    if strategy == 'SOBE_CAI':
+        data[label + '_sobe'] = data.apply(set_status_PL, axis=1, args=[diff_percent, max_regression_profit_and_loss, diff_col, 'SOBE'])
+        data[label + '_cai'] = data.apply(set_status_PL, axis=1, args=[diff_percent, max_regression_profit_and_loss, diff_col, 'CAI'])
+        data[label + '_sobe'] = pd.Categorical(data[label + '_sobe'])
+        data[label + '_sobe'] = pd.Categorical(data[label + '_sobe'])
+    else:
+        data[label] = data.apply(set_status_PL, axis=1, args=[diff_percent, max_regression_profit_and_loss, diff_col, strategy])
+        data[label] = pd.Categorical(data[label])
 
     if drop_na:
         data.dropna(inplace=True)
     if drop_calc_cols:
         data.drop(columns=cols + diff_cols, inplace=True)
-    data[label] = pd.Categorical(data[label])
+
     return data
 
 
@@ -562,7 +573,7 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
         if (operacao.startswith('SOBE') or operacao.startswith('CAI')) and not comprado:
             operacao_compra = operacao
             valor_compra = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
-            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra}')
+            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra:.4f}')
             comprado = True
 
         if comprado:
@@ -582,7 +593,7 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
                 else:
                     saldo += round(saldo * (-diff / 100), 2)
 
-            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda} => Diff: {round(diff,2)}% ==> Saldo: {saldo}')
+            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda:.4f} => Diff: {diff:.2f}% ==> PnL: $ {saldo:.2f}')
             comprado = False
 
     print(f'Saldo: {saldo}')

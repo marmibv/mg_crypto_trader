@@ -31,24 +31,37 @@ def start_predict_engine(symbol,
                          times_regression_profit_and_loss=myenv.times_regression_profit_and_loss,
                          calc_rsi=True,
                          saldo=myenv.saldo_inicial,
-                         trace=False):
-    print('start_predict_engine: regression_times: ', regression_times)
-
+                         verbose=False):
     use_cols = date_features + numeric_features
-    print('start_predict_engine: use_cols: ', use_cols)
+    print(f'start_predict_engine: Now: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - \nParameters: ')
+    print(f' --> symbol: {symbol}')
+    print(f' --> estimator: {estimator}')
+    print(f' --> regression_times: {regression_times}')
+    print(f' --> tail: {tail}')
+    print(f' --> start_train_date: {start_train_date}')
+    print(f' --> start_test_date: {start_test_date}')
+    print(f' --> numeric_features: {numeric_features}')
+    print(f' --> stop_loss: {stop_loss}')
+    print(f' --> regression_times: {regression_times}')
+    print(f' --> times_regression_profit_and_loss: {times_regression_profit_and_loss}')
+    print(f' --> calc_rsi: {calc_rsi}')
+    print(f' --> saldo: {saldo}')
+    print(f' --> verbose: {verbose}')
+    print(f' --> use_cols: {use_cols}')
 
     model_name_init = get_model_name(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
     experiment, model = load_model(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)  # cassification_experiment
-    print('start_predict_engine: model loaded!')
+    print(f'start_predict_engine: model {model_name_init} loaded.')
 
-    print('start_predict_engine: reagind all data...')
     df_database, _ = prepare_all_data(symbol,
                                       start_train_date,
                                       calc_rsi,
                                       numeric_features,
                                       False,
                                       times_regression_profit_and_loss,
-                                      regression_times)
+                                      regression_times,
+                                      verbose)
+    print(f'start_predict_engine: df_database.shape: {df_database.shape}')
 
     cont = 0
     cont_aviso = 0
@@ -60,6 +73,8 @@ def start_predict_engine(symbol,
     diff = 0.0
     print('start_predict_engine: starting loop monitoring...')
     while True:
+        print('------------------------>>')
+        print(f'start_predict_engine: Loop  -->  Symbol: {symbol} - Cont: {cont} - Now: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
         try:
             model_name = get_model_name(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
             if model_name != model_name_init:
@@ -72,19 +87,16 @@ def start_predict_engine(symbol,
             print('start_predict_engine: max_date: ', max_date)
 
             df_klines = get_klines(symbol, max_date=max_date.strftime('%Y-%m-%d'), limit=1, columns=use_cols)
-
             df_database = pd.concat([df_database, df_klines])
             df_database.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
             df_database.sort_index(inplace=True)
             df_database['symbol'] = symbol
             df_database = parse_type_fields(df_database)
-            print('start_predict_engine: df_database.shape: ', df_database.shape)
+            print('start_predict_engine: Updated data - df_database.shape: ', df_database.shape)
 
             print('start_predict_engine: calc_rsi...')
-            # print(df_database.tail(5))
             if calc_rsi:
                 df_database = calc_RSI(df_database)  # , last_one=True)
-            # print(df_database.tail(5))
 
             print(f'start_predict_engine: regression_times {regression_times}...')
             if regression_times > 0:
@@ -92,7 +104,7 @@ def start_predict_engine(symbol,
 
             # Calculo compra e venda
             valor_atual = df_database.tail(1)["close"].values[0]
-            print(f'start_predict_engine: valor_atual: {valor_atual:.4f}')
+            print(f'start_predict_engine: valor_atual: >> $ {valor_atual:.4f} <<')
 
             if comprado:
                 diff = 100 * (valor_atual - valor_compra) / valor_compra
@@ -112,7 +124,7 @@ def start_predict_engine(symbol,
 
             if not comprado:
                 print('start_predict_engine: start predict_model...')
-                df_predict = experiment.predict_model(model, df_database.tail(1), verbose=False)
+                df_predict = experiment.predict_model(model, df_database.tail(1), verbose=verbose)
                 # Inicio calculo compra
                 operacao = df_predict['prediction_label'].values[0]
                 print(f'start_predict_engine: operacao predita: {operacao}')
@@ -122,10 +134,10 @@ def start_predict_engine(symbol,
                     operacao_compra = operacao
                     rsi = df_predict.tail(1)["rsi"].values[0]
 
-                    msg = f'Compra: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - RSI: {rsi:.2f} - PnL: {saldo:.2f}'
+                    msg = f'Compra: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - RSI: {rsi:.2f} - PnL: $ {saldo:.2f}'
                     sm.send_to_telegram(msg)
                 # Fim calculo compra
-                gc.collect()
+            gc.collect()
         except Exception as e:
             traceback.print_exc()
             sm.send_status_to_telegram('ERROR: ' + str(e))
@@ -137,10 +149,10 @@ def start_predict_engine(symbol,
             if cont_aviso > 100:
                 cont_aviso = 0
                 if comprado:
-                    msg = f'*COMPRADO*: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - Valor Atual: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: {saldo:.2f}'
+                    msg = f'*COMPRADO*: Symbol: {symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - Valor Atual: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: $ {saldo:.2f}'
                     sm.send_status_to_telegram(msg)
                 else:
-                    msg = f'*NÃO COMPRADO*: Symbol: {symbol} - open_time: {open_time} - Valor Atual: {valor_atual:.4f} - PnL: {saldo:.2f}'
+                    msg = f'*NÃO COMPRADO*: Symbol: {symbol} - open_time: {open_time} - Valor Atual: {valor_atual:.4f} - PnL: $ {saldo:.2f}'
                     sm.send_status_to_telegram(msg)
 
 
@@ -157,6 +169,7 @@ def main(args):
             start_train_date = '2010-01-01'
             start_test_date = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
             saldo_inicial = myenv.saldo_inicial
+            verbose = False
 
             for arg in args:
                 if (arg.startswith('-download_data')):
@@ -201,18 +214,21 @@ def main(args):
                 if (arg.startswith('-saldo-inicial=')):
                     saldo_inicial = float(arg.split('=')[1])
 
+                if (arg.startswith('-verbose')):
+                    verbose = True
+                    os.environ["PYCARET_CUSTOM_LOGGING_LEVEL"] = "DEBUG"
+
             sm.send_status_to_telegram(f'bot:main: Iniciando Modelo Preditor para Symbol: {symbol} - Args: {args}')
             print(f'bot:main: args: {args}')
             print(f'bot:main: numeric_features: {numeric_features}')
             start_predict_engine(symbol, estimator, -1, start_train_date, start_test_date, numeric_features, stop_loss, regression_times,
-                                 times_regression_profit_and_loss, calc_rsi, saldo_inicial)
+                                 times_regression_profit_and_loss, calc_rsi, saldo_inicial, verbose)
         except Exception as e:
             traceback.print_exc()
             sm.send_status_to_telegram('ERRO: ' + str(e))
         finally:
             gc.collect()
             time.sleep(60)
-            continue
 
 
 if __name__ == '__main__':
