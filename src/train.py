@@ -94,6 +94,7 @@ def start_train_engine(symbol,
     print('start_train_engine: saving model...')
     model_name = save_model(symbol, final_model, setup, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
 
+    res_score = None
     if use_all_data_to_train:
         test_data, ajusted_test_data = None, all_data
         start_test_date = None

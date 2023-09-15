@@ -13,3 +13,27 @@ python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -reg
 python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=ETHUSDT
 python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=SOLUSDT
 python . -run-bot -calc-rsi -start-train-date=2023-06-01 -verbose -all-cols -regression-times=0 -stop-loss=2 -estimator=mlp -symbol=XRPUSDT
+
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=2.5 -estimator=knn -symbol=ADAUSDT >> bot.log && 
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=1.5 -estimator=knn -symbol=BNBUSDT >> bot.log && 
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=2.5 -estimator=knn -symbol=BTCUSDT >> bot.log && 
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=1 -estimator=knn -symbol=DOGEUSDT >> bot.log && 
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=2.5 -estimator=knn -symbol=ETHUSDT >> bot.log && 
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=3 -estimator=knn -symbol=SOLUSDT >> bot.log && 
+python . -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=3 -estimator=knn -symbol=XRPUSDT >> bot.log 
+
+
+# >> 14/09/2023 - Identificado melhor performance para -stop-loss=2.5 e -regression-profit-and-loss=24: BTC
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=2.5 -regression-profit-and-loss=24 -symbol=BTCUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=3 e -regression-profit-and-loss=24: XRP
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=3 -regression-profit-and-loss=24 -symbol=XRPUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=2.5 e -regression-profit-and-loss=24: ADA
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=2.5 -regression-profit-and-loss=24 -symbol=ADAUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=1.5 e -regression-profit-and-loss=24: BNB
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=1.5 -regression-profit-and-loss=24 -symbol=BNBUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Moeda muito volátil. REMOVER da lista de bots - DOGE
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=1 -regression-profit-and-loss=24 -symbol=DOGEUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=2.5 e -regression-profit-and-loss=24: ETH
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=2.5 -regression-profit-and-loss=24 -symbol=ETHUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=3  e -regression-profit-and-loss=24: SOL
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=3 -regression-profit-and-loss=24 -symbol=SOLUSDT -use-all-data-to-train -estimator=knn

@@ -35,34 +35,34 @@ sudo swapon /newswap
 # ADA
 # DOGE
 # SOL
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=BTCUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=ETHUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=BNBUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=XRPUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=ADAUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=DOGEUSDT
-python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=SOLUSDT
+#python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=BTCUSDT
+#python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=ETHUSDT
+#python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=BNBUSDT
+#python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=XRPUSDT
+#python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=ADAUSDT
+#python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=DOGEUSDT
+#python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regression-times=0 -use-all-data-to-train -stop-loss=2 -estimator=mlp -symbol=SOLUSDT
 #python . -train-model -calc-rsi -normalize -verbose -all-cols -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -estimator=knn -stop-loss=1 -use-all-data-to-train
 #python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-06-01 -estimator=knn
 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=xgboost
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=lightgbm
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=rl
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=knn 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=nb
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=dt 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=svm 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=mlp
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=ridge 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=rf 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=qda 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=ada 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=gbc 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=lda 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=et 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=catboost 
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=rbfsvm
-!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=gpc
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=xgboost
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=lightgbm
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=rl
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=knn 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=nb
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=dt 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=svm 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=mlp
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=ridge 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=rf 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=qda 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=ada 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=gbc 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=lda 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=et 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=catboost 
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=rbfsvm
+#!python /content/drive/MyDrive/crypto_test/. -train-model -calc-rsi -normalize -verbose -numeric-features='close' -regression-features='close' -regression-times=24 -symbol=BTCUSDT -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=gpc
 
 #python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=knn 
 #python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=nb 
@@ -77,5 +77,21 @@ python . -train-model -calc-rsi -n-jobs=20 -normalize -verbose -all-cols -regres
 #python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=lda
 #python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=et
 #python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01 -estimator=catboost
+
+
+# >> 14/09/2023 - Identificado melhor performance para -stop-loss=2.5 e -regression-profit-and-loss=24: BTC
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=2.5 -regression-profit-and-loss=24 -symbol=BTCUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=3 e -regression-profit-and-loss=24: XRP
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=3 -regression-profit-and-loss=24 -symbol=XRPUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=2.5 e -regression-profit-and-loss=24: ADA
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=2.5 -regression-profit-and-loss=24 -symbol=ADAUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=1.5 e -regression-profit-and-loss=24: BNB
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=1.5 -regression-profit-and-loss=24 -symbol=BNBUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Moeda muito volátil. REMOVER da lista de bots - DOGE
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=1 -regression-profit-and-loss=24 -symbol=DOGEUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=2.5 e -regression-profit-and-loss=24: ETH
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=2.5 -regression-profit-and-loss=24 -symbol=ETHUSDT -use-all-data-to-train -estimator=knn
+#>> 15/09/2023 - Identificado melhor performance para -stop-loss=3  e -regression-profit-and-loss=24: SOL
+python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=3 -regression-profit-and-loss=24 -symbol=SOLUSDT -use-all-data-to-train -estimator=knn
 
 exit 0
