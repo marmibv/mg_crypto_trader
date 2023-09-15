@@ -60,7 +60,10 @@ def start_predict_engine(symbol,
                                       False,
                                       times_regression_profit_and_loss,
                                       regression_times,
-                                      verbose)
+                                      start_train_date is None,
+                                      stop_loss,
+                                      verbose,
+                                      )
     print(f'start_predict_engine: df_database.shape: {df_database.shape} - start_train_date: {start_train_date}')
 
     cont = 0
