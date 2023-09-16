@@ -161,8 +161,9 @@ def save_results(model_name,
     result_simulado['use-all-data-to-train'] = use_all_data_to_train
     result_simulado['no-tune'] = no_tune
     if res_score is not None:
-        for i in range(0, len(res_score["status"].values)):
-            result_simulado['score'] = f'{res_score["status"].values[i]}={res_score["_score"].values[i]}'
+        if 'status' in res_score.columns:
+            for i in range(0, len(res_score["status"].values)):
+                result_simulado['score'] = f'{res_score["status"].values[i]}={res_score["_score"].values[i]}'
 
     df_resultado_simulacao = pd.concat([df_resultado_simulacao, pd.DataFrame([result_simulado])], ignore_index=True)
     df_resultado_simulacao.sort_values('saldo_final', inplace=True)

@@ -506,7 +506,7 @@ def regression_PnL(data: pd.DataFrame, label: str, diff_percent: float, max_regr
         data[label + '_sobe'] = pd.Categorical(data[label + '_sobe'])
         data[label + '_sobe'] = pd.Categorical(data[label + '_sobe'])
     else:
-        data[label] = data.apply(set_status_PL, axis=1, args=[diff_percent, max_regression_profit_and_loss, diff_col, strategy])
+        data[label] = data.apply(set_status_PL, axis=1, args=[diff_percent, max_regression_profit_and_loss, diff_col, 'SOBE_CAI'])
         data[label] = pd.Categorical(data[label])
 
     if drop_na:
