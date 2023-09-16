@@ -1,4 +1,11 @@
 import os
+from pathlib import Path
+
+file = Path(__file__)
+parent = file.parent
+os.chdir(parent)
+print(file, parent, os.getcwd())
+
 import logging
 
 os.environ["PYCARET_CUSTOM_LOGGING_LEVEL"] = "CRITICAL"
