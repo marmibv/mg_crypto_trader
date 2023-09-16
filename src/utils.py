@@ -1,3 +1,5 @@
+from itertools import combinations
+
 from src.myenv import *
 
 import src.send_message as sm
@@ -13,6 +15,40 @@ import pandas as pd
 import plotly.express as px
 import gc
 import traceback
+
+
+def prepare_numeric_features_list(list_of_elements, fix_it='close'):
+    # Generate all possible combinations of length 2
+    if fix_it in list_of_elements:
+        list_of_elements.remove('close')
+
+    if len(list_of_elements) > 0:
+        combinations_list = ['close']
+        for i in range(1, len(list_of_elements) + 1):
+            a = combinations(list_of_elements, i)
+            for s in a:
+                res = ''
+                for j in s:
+                    res += f'{j},'
+                combinations_list.append(f'{fix_it},' + res[0:len(res) - 1])
+    else:
+        combinations_list = ['close']
+
+    return combinations_list
+
+
+def combine_list(list_of_elements):
+
+    combinations_list = []
+    for i in range(1, len(list_of_elements) + 1):
+        a = combinations(list_of_elements, i)
+        for s in a:
+            res = ''
+        for j in s:
+            res += f'{j},'
+        combinations_list.append(res[0:len(res) - 1])
+
+    return combinations_list
 
 
 def increment_time(interval='1h'):
