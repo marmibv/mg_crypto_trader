@@ -13,6 +13,7 @@ logging.basicConfig(filename='crypto_logs.log', encoding='utf-8', level=logging.
 
 import src.robo as bot
 import src.train as tr
+import src.batch_analysis as ba
 import time
 import sys
 import traceback
@@ -21,29 +22,38 @@ print("Argument provided:", sys.argv[1:])
 
 
 def main(args):
-    while True:
-        try:
-            for arg in args:
-                if (arg.startswith('-train-model')):
-                    print('Starting training...')
-                    if tr.main(args):
-                        print('Trainin completed ** SUCCESS **')
-                    else:
-                        print('Trainin ** FAILS **')
-                    sys.exit(0)
-            for arg in args:
-                if (arg.startswith('-simule-trading')):
-                    tr.exec_simule_trading(args)
+  while True:
+    try:
+      for arg in args:
+        if (arg.startswith('-train-model')):
+          print('Starting training...')
+          if tr.main(args):
+            print('Trainin completed ** SUCCESS **')
+          else:
+            print('Trainin ** FAILS **')
+          sys.exit(0)
 
-            for arg in args:
-                if (arg.startswith('-run-bot')):
-                    print('Starting bot...')
-                    bot.main(args)
+      for arg in args:
+        if (arg.startswith('-simule-trading')):
+          tr.exec_simule_trading(args)
+          sys.exit(0)
 
-        except Exception as e:
-            traceback.print_exc()
-            time.sleep(60)
+      for arg in args:
+        if (arg.startswith('-run-bot')):
+          print('Starting bot...')
+          bot.main(args)
+          sys.exit(0)
+
+      for arg in args:
+        if (arg.startswith('-batch-analysis')):
+          print('Starting batch analysis...')
+          ba.main(args)
+          sys.exit(0)
+
+    except Exception as e:
+      traceback.print_exc()
+      time.sleep(60)
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+  main(sys.argv[1:])
