@@ -195,7 +195,7 @@ def main(args):
                     regression_times = int(arg.split('=')[1])
 
                 if (arg.startswith('-regression-profit-and-loss=')):
-                    times_regression_profit_and_loss = float(arg.split('=')[1])
+                    times_regression_profit_and_loss = int(arg.split('=')[1])
 
                 if (arg.startswith('-calc-rsi')):
                     calc_rsi = True
