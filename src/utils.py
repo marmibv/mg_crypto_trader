@@ -441,6 +441,7 @@ def adjust_index(df):
 
 
 def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, columns=['open_time', 'close'], parse_data=True):
+    # return pd.DataFrame()
     start_time = datetime.datetime.now()
     client = Client()
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)

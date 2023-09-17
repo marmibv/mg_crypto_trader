@@ -38,4 +38,7 @@ python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regre
 #>> 15/09/2023 - Identificado melhor performance para -stop-loss=3  e -regression-profit-and-loss=24: SOL
 python . -train-model -calc-rsi -normalize -numeric-features=close,volume -regression-features=close,volume,rsi -regression-times=0 -no-tune -stop-loss=3 -regression-profit-and-loss=24 -symbol=SOLUSDT -use-all-data-to-train -estimator=knn
 
-ssh -f marcelo@192.168.31.161 '/home/marcelo/des/mg_crypto_trader/.env/bin/python3.10 /home/marcelo/des/mg_crypto_trader/. -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=2.5 -estimator=knn -symbol=ADAUSDT > /home/marcelo/des/mg_crypto_trader/bot_ADAUSDT.log'
+ssh -f marcelo@192.168.31.161 /home/marcelo/des/mg_crypto_trader/.env/bin/python3.10 /home/marcelo/des/mg_crypto_trader/. -run-bot -calc-rsi -start-train-date=2023-06-01 -all-cols -regression-times=0 -stop-loss=2.5 -estimator=knn -symbol=ADAUSDT > /home/marcelo/des/mg_crypto_trader/bot_ADAUSDT.log
+
+
+open,high,low,close,volume,quote_asset_volume,taker_buy_base_asset_volume,taker_buy_quote_asset_volume,number_of_trades
