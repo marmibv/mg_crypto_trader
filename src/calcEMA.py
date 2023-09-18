@@ -120,7 +120,7 @@ def calc_RSI(df: pd.DataFrame, close_price='close', window=14, fillna=False, las
                 print('calc_RSI: last_one=TRUE: Erro no calculo do RSI!', error)
                 print(df)
                 print(df.info())
-                traceback.print_exc()
+                #traceback.print_exc()
         else:
             try:
                 df['change'] = df[close_price].diff()
@@ -138,7 +138,7 @@ def calc_RSI(df: pd.DataFrame, close_price='close', window=14, fillna=False, las
                 print('calc_RSI: Erro no calculo do RSI!', error)
                 print(df)
                 print(df.info())
-                traceback.print_exc()
+                #traceback.print_exc()
             finally:
                 df.drop(columns=['change', 'gain', 'loss', 'avg_gain', 'avg_loss', 'rs'], inplace=True, errors='ignore')
 

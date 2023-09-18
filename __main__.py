@@ -6,54 +6,51 @@ parent = file.parent
 os.chdir(parent)
 print(file, parent, os.getcwd())
 
-import logging
 
 os.environ["PYCARET_CUSTOM_LOGGING_LEVEL"] = "CRITICAL"
-logging.basicConfig(filename='crypto_logs.log', encoding='utf-8', level=logging.CRITICAL)
 
 import src.robo as bot
 import src.train as tr
 import src.batch_analysis as ba
-import time
+import src.start_batch_training as bt
 import sys
-import traceback
 # Now you can use the 'argument' variable in your script
 print("Argument provided:", sys.argv[1:])
 
 
 def main(args):
-  while True:
-    try:
-      for arg in args:
+    for arg in args:
         if (arg.startswith('-train-model')):
-          print('Starting training...')
-          if tr.main(args):
-            print('Trainin completed ** SUCCESS **')
-          else:
-            print('Trainin ** FAILS **')
-          sys.exit(0)
+            print('Starting training...')
+            if tr.main(args):
+                print('Trainin completed ** SUCCESS **')
+            else:
+                print('Trainin ** FAILS **')
+            sys.exit(0)
 
-      for arg in args:
+    for arg in args:
         if (arg.startswith('-simule-trading')):
-          tr.exec_simule_trading(args)
-          sys.exit(0)
+            tr.exec_simule_trading(args)
+            sys.exit(0)
 
-      for arg in args:
+    for arg in args:
         if (arg.startswith('-run-bot')):
-          print('Starting bot...')
-          bot.main(args)
-          sys.exit(0)
+            print('Starting bot...')
+            bot.main(args)
+            sys.exit(0)
 
-      for arg in args:
+    for arg in args:
         if (arg.startswith('-batch-analysis')):
-          print('Starting batch analysis...')
-          ba.main(args)
-          sys.exit(0)
+            print('Starting batch analysis...')
+            ba.main(args)
+            sys.exit(0)
 
-    except Exception as e:
-      traceback.print_exc()
-      time.sleep(60)
+    for arg in args:
+        if (arg.startswith('-batch-training')):
+            print('Starting batch training...')
+            bt.main(args)
+            sys.exit(0)
 
 
 if __name__ == '__main__':
-  main(sys.argv[1:])
+    main(sys.argv[1:])

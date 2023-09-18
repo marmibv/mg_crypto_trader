@@ -1,2 +1,3 @@
 pycaret[full]
 python-binance
+sqlalchemy

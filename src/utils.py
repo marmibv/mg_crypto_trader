@@ -14,7 +14,17 @@ import os
 import pandas as pd
 import plotly.express as px
 import gc
-import traceback
+import logging
+
+log = logging.getLogger()
+
+
+def get_symbol_list():
+    result = []
+    df = pd.read_csv(datadir + '/symbol_list.csv')
+    for symbol in df['symbol']:
+        result.append(symbol)
+    return result
 
 
 def prepare_numeric_features_list(list_of_elements, fix_it='close'):
@@ -100,7 +110,7 @@ def read_data(dir, sep=';', all_cols=None, use_cols=use_cols) -> pd.DataFrame:
     dataframes = []
 
     for filename in filenames:
-        print('read_data: Start reading file: ', filename)
+        log.info(f'read_data: Start reading file: {filename}')
         df = pd.read_csv(filename, names=all_cols, parse_dates=parse_dates,
                          date_parser=date_parser, sep=sep, decimal='.', usecols=use_cols)
         dataframes.append(df)
@@ -128,7 +138,7 @@ def setup_regression_model(
         numeric_features=['open', 'high', 'low', 'volume', 'close', 'rsi'],
         date_features=['open_time'],
         use_gpu=False,
-        regressor_estimator='lr',
+        estimator='lr',
         apply_best_analisys=False,
         fold=3,
         sort='MAE',
@@ -149,15 +159,15 @@ def setup_regression_model(
                      use_gpu=use_gpu,
                      verbose=verbose,
                      )
-    best = regressor_estimator
+    best = estimator
     if apply_best_analisys:
-        print('setup_model: Applying best analisys...') if verbose else None
+        log.info('setup_model: Applying best analisys...') if verbose else None
         best = setup.compare_models(sort=sort, verbose=True, exclude=['lightgbm'])
 
-    print(f'setup_model: Creating model Best: [{best}]') if verbose else None
+    log.info(f'setup_model: Creating model Best: [{best}]') if verbose else None
     model = setup.create_model(best, verbose=False)
     model_name_file = str(model)[0:str(model).find('(')] + '_' + label
-    print(f'setup_model: Saving model {model_name_file}') if verbose else None
+    log.info(f'setup_model: Saving model {model_name_file}') if verbose else None
     setup.save_model(model, model_name_file)
 
     return setup, model
@@ -170,11 +180,11 @@ def predict(setup: RegressionExperiment,
             date_features=['open_time'],
             verbose=False) -> RegressionExperiment:
 
-    print('predict: predict.setup: \n', setup) if verbose else None
-    print('predict: predict.model: \n', model) if verbose else None
-    print('predict: predict.predict_data: \n', predict_data) if verbose else None
-    print('predict: predict.numeric_features: \n', numeric_features) if verbose else None
-    print('predict: predict.date_features: \n', date_features) if verbose else None
+    log.info(f'predict: predict.setup: \n {setup}') if verbose else None
+    log.info(f'predict: predict.model: \n {model}') if verbose else None
+    log.info(f'predict: predict.predict_data: \n {predict_data}') if verbose else None
+    log.info(f'predict: predict.numeric_features: \n {numeric_features}') if verbose else None
+    log.info(f'predict: predict.date_features: \n {date_features}') if verbose else None
 
     predict = None
     if predict_data is None:
@@ -191,7 +201,7 @@ def forecast(data: pd.DataFrame,
              interval='1h',
              numeric_features=['open', 'high', 'low', 'volume', 'close', 'rsi'],
              date_features=['open_time'],
-             regressor_estimator='lr',
+             estimator='lr',
              apply_best_analisys=False,
              use_gpu=False,
              fold=3,
@@ -200,7 +210,7 @@ def forecast(data: pd.DataFrame,
 
     _data = data.copy()
     test_data = data.tail(1).copy().reset_index(drop=True)
-    print('forecast: numeric_features: ', numeric_features)
+    log.info(f'forecast: numeric_features: {numeric_features}')
 
     open_time = test_data['open_time']
     df_result = pd.DataFrame()
@@ -208,17 +218,17 @@ def forecast(data: pd.DataFrame,
         df_predict = pd.DataFrame()
         open_time = open_time + increment_time(interval)
         df_predict['open_time'] = open_time
-        print(f'forecast: Applying predict No: {i} for open_time: {df_predict["open_time"].values}')
+        log.info(f'forecast: Applying predict No: {i} for open_time: {df_predict["open_time"].values}')
 
         for label in numeric_features:
             if label not in list_models:
-                print('forecast: Training model for label:', label)
+                log.info(f'forecast: Training model for label: {label}')
                 target, train_data = rotate_label(_data, -1, label, True)
                 setup, model = setup_regression_model(train_data, target, train_size=train_size, fold=fold,
-                                                      regressor_estimator=regressor_estimator, use_gpu=use_gpu, apply_best_analisys=apply_best_analisys)
+                                                      estimator=estimator, use_gpu=use_gpu, apply_best_analisys=apply_best_analisys)
                 train_data.drop(columns=target, inplace=True)
                 list_models[label] = {'setup': setup, 'model': model}
-                print('forecast: Training model Done!')
+                log.info('forecast: Training model Done!')
 
             _setup = list_models[label]['setup']
             _model = list_models[label]['model']
@@ -229,7 +239,7 @@ def forecast(data: pd.DataFrame,
                          numeric_features,
                          date_features)
 
-            print('forecast: Label:', label, 'Predict Label:', df['prediction_label'].values[0])
+            log.info(f'forecast: Label: {label} - Predict Label: {df["prediction_label"].values[0]}')
             df_predict[label] = df['prediction_label']
             gc.collect()
 
@@ -240,11 +250,11 @@ def forecast(data: pd.DataFrame,
 
 
 def shift_test_data(predict_data: pd.DataFrame, label='close', columns=[], verbose=False):
-    print('forecast: Shifting: \n', predict_data.tail(1)[columns]) if verbose else None
+    log.info(f'forecast: Shifting: \n {predict_data.tail(1)[columns]}') if verbose else None
     _test_data = predict_data[columns].tail(1).copy().shift(1, axis='columns')
     _test_data.drop(columns=label, inplace=True)
     _test_data['open_time'] = predict_data['open_time']
-    print('forecast: Shifted: \n', _test_data.tail(1)) if verbose else None
+    log.info(f'forecast: Shifted: \n {_test_data.tail(1)}') if verbose else None
     return _test_data
 
 
@@ -255,7 +265,7 @@ def forecast2(data: pd.DataFrame,
               interval='1h',
               numeric_features=['open', 'high', 'low', 'volume', 'close', 'rsi'],
               date_features=['open_time'],
-              regressor_estimator='lr',
+              estimator='lr',
               apply_best_analisys=False,
               use_gpu=False,
               fold=3,
@@ -270,7 +280,7 @@ def forecast2(data: pd.DataFrame,
         numeric_features.append(_label)
     _data.dropna(inplace=True)
 
-    print('forecast: numeric_features: ', numeric_features) if verbose else None
+    log.info(f'forecast: numeric_features: {numeric_features}') if verbose else None
 
     open_time = data.tail(1)['open_time']
     df_result = pd.DataFrame()
@@ -278,13 +288,13 @@ def forecast2(data: pd.DataFrame,
     model = None
     for i in range(1, fh + 1):
         if model is None:
-            print('forecast: Training model for label:', label) if verbose else None
+            log.info(f'forecast: Training model for label: {label}') if verbose else None
             setup, model = setup_regression_model(_data, label, train_size, numeric_features, date_features,
-                                                  use_gpu, regressor_estimator, apply_best_analisys, fold, sort, verbose)
-            print('forecast: Training model Done!') if verbose else None
+                                                  use_gpu, estimator, apply_best_analisys, fold, sort, verbose)
+            log.info('forecast: Training model Done!') if verbose else None
 
         open_time = open_time + increment_time(interval)
-        print(f'forecast: Applying predict No: {i} for open_time: {open_time}') if verbose else None
+        log.info(f'forecast: Applying predict No: {i} for open_time: {open_time}') if verbose else None
         predict_data = shift_test_data(_data.tail(1).copy() if i == 1 else df_result.tail(1).copy(), label=label, columns=[label] + numeric_features)
         predict_data['open_time'] = open_time
 
@@ -299,7 +309,7 @@ def forecast2(data: pd.DataFrame,
     return df_result.sort_values('open_time').reset_index(drop=True), model, setup
 
 
-def calc_diff(predict_data, validation_data, regressor):
+def calc_diff(predict_data, validation_data, estimator):
     start_date = predict_data["open_time"].min()  # strftime("%Y-%m-%d")
     end_date = predict_data["open_time"].max()  # .strftime("%Y-%m-%d")
     # now = datetime.now().strftime("%Y-%m-%d")
@@ -315,11 +325,11 @@ def calc_diff(predict_data, validation_data, regressor):
     return filtered_data
 
 
-def plot_predic_model(predict_data, validation_data, regressor):
+def plot_predic_model(predict_data, validation_data, estimator):
     start_date = predict_data["open_time"].min()  # strftime("%Y-%m-%d")
     end_date = predict_data["open_time"].max()  # .strftime("%Y-%m-%d")
 
-    filtered_data = calc_diff(predict_data, validation_data, regressor)
+    filtered_data = calc_diff(predict_data, validation_data, estimator)
 
     fig1 = px.line(filtered_data, x=filtered_data.index, y=['close', 'prediction_label'], template='plotly_dark', range_x=[start_date, end_date])
     fig2 = px.line(filtered_data, x=filtered_data.index, y=['diff'], template='plotly_dark', range_x=[start_date, end_date])
@@ -340,31 +350,50 @@ def get_model_name(symbol, estimator=myenv.estimator, stop_loss=myenv.stop_loss,
     return model_name
 
 
-def save_model(symbol, model, experiment, estimator='xgboost', stop_loss=myenv.stop_loss, regression_times=myenv.regression_times, times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
+def get_model_name(
+        symbol,
+        estimator='xgboost',
+        stop_loss=myenv.stop_loss,
+        regression_times=myenv.regression_times,
+        times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
+
     model_name = ''
     for i in range(1, 999):
         model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
         if os.path.exists(f'{model_name}.pkl'):
             continue
         else:
-            print('save_model: Model file name: ', model_name)
-            experiment.save_model(model, model_name)
-            break
+            return model_name
+    return model_name
+
+
+def save_model(
+        symbol,
+        model,
+        experiment,
+        estimator='xgboost',
+        stop_loss=myenv.stop_loss,
+        regression_times=myenv.regression_times,
+        times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
+
+    model_name = get_model_name(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
+    log.info(f'save_model: Model file name: {model_name}')
+    experiment.save_model(model, model_name)
     return model_name
 
 
 def load_model(symbol, estimator=myenv.estimator, stop_loss=myenv.stop_loss, regression_times=myenv.regression_times, times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
     ca = ClassificationExperiment()
     model_name = get_model_name(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
-    print('load_model: Loading model:', model_name)
+    log.info(f'load_model: Loading model: {model_name}')
     model = ca.load_model(model_name, verbose=False)
-    print('load_model: Model obj:', model)
+    log.info(f'load_model: Model obj: {model}')
 
     return ca, model
 
 
 def regresstion_times(df_database, regression_features=['close'], regression_times=24 * 30, last_one=False):
-    print('regresstion_times: regression_features: ', regression_features)
+    log.info(f'regresstion_times: regression_features: {regression_features}')
     count = df_database.shape[0]
     features_added = []
     if last_one:
@@ -403,10 +432,10 @@ def get_max_date(df_database):
 
 def get_database(symbol, tail=-1, columns=['open_time', 'close'], parse_data=True):
     database_name = get_database_name(symbol)
-    print('get_database: name: ', database_name)
+    log.info(f'get_database: name: {database_name}')
 
     df_database = pd.DataFrame()
-    print('get_database: columns: ', columns)
+    log.info(f'get_database: columns: {columns}')
     if os.path.exists(database_name):
         if parse_data:
             df_database = pd.read_csv(database_name, sep=';', parse_dates=date_features, date_parser=date_parser, decimal='.', usecols=columns)
@@ -417,8 +446,8 @@ def get_database(symbol, tail=-1, columns=['open_time', 'close'], parse_data=Tru
         df_database = df_database[columns]
     if tail > 0:
         df_database = df_database.tail(tail).copy()
-    print(f'get_database: count_rows: {df_database.shape[0]} - symbol: {symbol} - tail: {tail}')
-    print(f'get_database: duplicated: {df_database.index.duplicated().sum()}')
+    log.info(f'get_database: count_rows: {df_database.shape[0]} - symbol: {symbol} - tail: {tail}')
+    log.info(f'get_database: duplicated: {df_database.index.duplicated().sum()}')
     return df_database
 
 
@@ -447,14 +476,14 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, columns
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
     if 'symbol' in columns:
         columns.remove('symbol')
-    # print('get_klines: columns: ', columns)
+    # log.info('get_klines: columns: ', columns)
     df_klines = pd.DataFrame(data=klines, columns=all_klines_cols)[columns]
     if parse_data:
         df_klines = parse_type_fields(df_klines, parse_dates=True)
     df_klines = adjust_index(df_klines)
     delta = datetime.datetime.now() - start_time
     # Print the delta time in days, hours, minutes, and seconds
-    print(f"get_klines: shape: {df_klines.shape} - Delta time: {delta.seconds % 60} seconds")
+    log.info(f'get_klines: shape: {df_klines.shape} - Delta time: {delta.seconds % 60} seconds')
     return df_klines
 
 
@@ -477,42 +506,43 @@ def parse_type_fields(df, parse_dates=False):
                     df[col] = pd.to_datetime(df[col], unit='ms')
 
     except Exception as e:
-        print(e)
-        print(df)
-        traceback.print_exc()
+        log.info(e)
+        log.info(df)
+        # traceback.print_exc()
     return df
 
 
-def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open_time', 'close'], parse_data=True):
+def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open_time', 'close'], parse_data=True, updata_data_from_web=True):
     database_name = get_database_name(symbol)
     df_database = get_database(symbol, tail, columns=columns, parse_data=parse_data)
 
     max_date = get_max_date(df_database)
     max_date_aux = ''
-    print(f'get_data: Downloading data for symbol: {symbol} - max_date: {max_date}')
-    while (max_date != max_date_aux):
-        print(f'get_data: max_date: {max_date} - max_date_aux: {max_date_aux}')
-        max_date_aux = get_max_date(df_database)
-        print('get_data: Max date database: ', max_date_aux)
+    if updata_data_from_web:
+        log.info(f'get_data: Downloading data for symbol: {symbol} - max_date: {max_date}')
+        while (max_date != max_date_aux):
+            log.info(f'get_data: max_date: {max_date} - max_date_aux: {max_date_aux}')
+            max_date_aux = get_max_date(df_database)
+            log.info(f'get_data: Max date database: {max_date_aux}')
 
-        df_klines = get_klines(symbol, interval=interval, max_date=max_date_aux.strftime('%Y-%m-%d'), columns=columns, parse_data=parse_data)
-        df_database = pd.concat([df_database, df_klines])
-        df_database.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
-        df_database.sort_index(inplace=True)
-        df_database['symbol'] = symbol
-        max_date = get_max_date(df_database)
-        if save_database:
-            if not os.path.exists(database_name.removesuffix(f'{symbol}.csv')):
-                os.makedirs(database_name.removesuffix(f'{symbol}.csv'))
-            df_database.to_csv(database_name, sep=';', index=False)
-            print('get_data: Database updated at ', database_name)
+            df_klines = get_klines(symbol, interval=interval, max_date=max_date_aux.strftime('%Y-%m-%d'), columns=columns, parse_data=parse_data)
+            df_database = pd.concat([df_database, df_klines])
+            df_database.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
+            df_database.sort_index(inplace=True)
+            df_database['symbol'] = symbol
+            max_date = get_max_date(df_database)
+            if save_database:
+                if not os.path.exists(database_name.removesuffix(f'{symbol}.csv')):
+                    os.makedirs(database_name.removesuffix(f'{symbol}.csv'))
+                df_database.to_csv(database_name, sep=';', index=False)
+                log.info(f'get_data: Database updated at {database_name}')
     return df_database
 
 
 def send_message(df_predict):
     message = f'Ticker: {df_predict["symbol"].values[0]} - Operação: {df_predict["prediction_label"].values[0]} - Valor Atual: {df_predict["close"].values[0]}'
     sm.send_to_telegram(message)
-    print('send_message:', message)
+    log.info(f'send_message: {message}')
 
 
 def set_status_PL(row, stop_loss, max_regression_profit_and_loss, prefix_col_diff, strategy='SOBE_CAI'):
@@ -570,7 +600,7 @@ def regress_until_diff(data: pd.DataFrame, diff_percent: float, max_regression_p
             close = data.iloc[row_nu:row_nu + 1]['close'].values[0]
             close_px = data.iloc[row_nu + i:row_nu + i + 1]['close'].values[0]
             diff = -100 * (close - close_px) / close
-            # print(f'ROW_NU: {row_nu} - regresssion_times: {i} - diff: {diff}')
+            # log.info(f'ROW_NU: {row_nu} - regresssion_times: {i} - diff: {diff}')
             i += 1
 
         data['close_shift_x'].iloc[row_nu:row_nu + 1] = close_px
@@ -610,12 +640,12 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
         if (operacao.startswith('SOBE') or operacao.startswith('CAI')) and not comprado:
             operacao_compra = operacao
             valor_compra = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
-            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra:.4f}')
+            log.info(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra:.4f}')
             comprado = True
 
         if comprado:
             diff = 100 * (_data.iloc[row_nu:row_nu + 1]['close'].values[0] - valor_compra) / valor_compra
-            # print(f'[{row_nu}][{operacao_compra}][{open_time}] Diff ==> {round(diff,2)}% - Comprado: {comprado}')
+            # log.info(f'[{row_nu}][{operacao_compra}][{open_time}] Diff ==> {round(diff,2)}% - Comprado: {comprado}')
 
         if (abs(diff) >= stop_loss) and comprado:
             valor_venda = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
@@ -630,8 +660,86 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
                 else:
                     saldo += round(saldo * (-diff / 100), 2)
 
-            print(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda:.4f} => Diff: {diff:.2f}% ==> PnL: $ {saldo:.2f}')
+            log.info(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda:.4f} => Diff: {diff:.2f}% ==> PnL: $ {saldo:.2f}')
             comprado = False
+        # Fim simulação
 
-    print(f'Saldo: {saldo}')
+    if operacao_compra == '':
+        log.info('Nenhuma operação de Compra e Venda foi realizada!')
+
+    log.info(f'Saldo: {saldo}')
     return saldo
+
+
+def validate_score_test_data(exp, final_model, label, test_data, ajusted_test_data):
+    log.info('start_train_engine: predicting final model...')
+    df_final_predict = exp.predict_model(final_model, data=ajusted_test_data)
+
+    res_score = None
+    if test_data is not None:
+        df_final_predict[label] = test_data[label]
+        df_final_predict['_score'] = df_final_predict['prediction_label'] == df_final_predict[label]
+
+        log.info(f'Score Mean: {df_final_predict["_score"].mean()}')
+        log.info(f'Score Group: \n{df_final_predict[[label, "_score"]].groupby(label).mean()}')
+        res_score = df_final_predict[[label, '_score']].groupby(label).mean().copy()
+
+    return df_final_predict, res_score
+
+
+def save_results(model_name,
+                 symbol,
+                 interval,
+                 estimator,
+                 train_size,
+                 start_train_date,
+                 start_test_date,
+                 numeric_features,
+                 regression_times,
+                 regression_features,
+                 times_regression_profit_and_loss,
+                 stop_loss,
+                 fold,
+                 start_value,
+                 final_value,
+                 use_all_data_to_train,
+                 no_tune,
+                 res_score,
+                 arguments):
+
+    simulation_results_filename = f'{myenv.datadir}/resultado_simulacao_{symbol}{myenv.currency}_{interval}.csv'
+    if (os.path.exists(simulation_results_filename)):
+        df_resultado_simulacao = pd.read_csv(simulation_results_filename, sep=';')
+    else:
+        df_resultado_simulacao = pd.DataFrame()
+
+    result_simulado = {}
+    result_simulado['data'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    result_simulado['symbol'] = symbol
+    result_simulado['interval'] = interval
+    result_simulado['estimator'] = estimator
+    result_simulado['stop_loss'] = stop_loss
+    result_simulado['regression_times'] = regression_times
+    result_simulado['times_regression_profit_and_loss'] = times_regression_profit_and_loss
+    result_simulado['profit_and_loss_value'] = round(final_value - start_value, 2)
+    result_simulado['start_value'] = round(start_value, 2)
+    result_simulado['final_value'] = round(final_value, 2)
+    result_simulado['numeric_features'] = numeric_features
+    result_simulado['regression_features'] = regression_features
+    result_simulado['train_size'] = train_size
+    result_simulado['use-all-data-to-train'] = use_all_data_to_train
+    result_simulado['start_train_date'] = start_train_date
+    result_simulado['start_test_date'] = start_test_date
+    result_simulado['fold'] = fold
+    result_simulado['no-tune'] = no_tune
+    if res_score is not None:
+        result_simulado['score'] = ''
+        for i in range(0, len(res_score.index.values)):
+            result_simulado['score'] += f'[{res_score.index.values[i]}={res_score["_score"].values[i]:.2f}]'
+    result_simulado['model_name'] = model_name
+    result_simulado['arguments'] = arguments
+
+    df_resultado_simulacao = pd.concat([df_resultado_simulacao, pd.DataFrame([result_simulado])], ignore_index=True)
+    df_resultado_simulacao.sort_values('final_value', inplace=True)
+
+    df_resultado_simulacao.to_csv(simulation_results_filename, sep=';', index=False)

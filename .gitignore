@@ -173,3 +173,8 @@ bkp_local_model
 *bkp_local_model*
 bkp_local_model/
 ./bkp_local_model
+
+mlruns
+*mlruns*
+mlruns/
+./mlruns

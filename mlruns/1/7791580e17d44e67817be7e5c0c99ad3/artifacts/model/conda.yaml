@@ -1,0 +1,8 @@
+channels:
+- conda-forge
+dependencies:
+- pip<=23.2.1
+- pip:
+  - mlflow
+  - pycaret==3.0.4
+name: clf-default-name-env

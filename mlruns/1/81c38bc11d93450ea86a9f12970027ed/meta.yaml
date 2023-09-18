@@ -1,0 +1,15 @@
+artifact_uri: file:///home/marcelo/des/mg_crypto_trader/mlruns/1/81c38bc11d93450ea86a9f12970027ed/artifacts
+end_time: 1695075592783
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+run_id: 81c38bc11d93450ea86a9f12970027ed
+run_name: K Neighbors Classifier
+run_uuid: 81c38bc11d93450ea86a9f12970027ed
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1695075592587
+status: 3
+tags: []
+user_id: marcelo

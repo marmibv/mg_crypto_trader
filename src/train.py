@@ -10,8 +10,6 @@ from pycaret.classification import ClassificationExperiment
 import pandas as pd
 import datetime
 
-import traceback
-
 
 def start_train_engine(symbol,
                        estimator,
@@ -417,7 +415,6 @@ def main(args):
             start_train_engine(symbol, estimator, train_size, start_train_date, start_test_date, numeric_features, stop_loss,
                                regression_times, regression_features, times_regression_profit_and_loss, calc_rsi, compare_models, n_jobs, use_gpu, verbose, normalize, fold, use_all_data_to_train, args, no_tune)
     except Exception as e:
-        traceback.print_exc()
         sm.send_status_to_telegram('ERRO: ' + str(e))
         return False
     return True

@@ -1,0 +1,15 @@
+artifact_uri: file:///home/marcelo/des/mg_crypto_trader/mlruns/1/94f8115137664499b5cc21ed08f2ca19/artifacts
+end_time: 1695068711187
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+run_id: 94f8115137664499b5cc21ed08f2ca19
+run_name: Session Initialized 8ea0
+run_uuid: 94f8115137664499b5cc21ed08f2ca19
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1695068708215
+status: 3
+tags: []
+user_id: marcelo

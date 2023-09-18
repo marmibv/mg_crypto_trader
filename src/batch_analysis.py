@@ -20,7 +20,7 @@ def train(calc_rsi,
           fold,
           n_jobs,
           symbol_list,
-          regressor_list,
+          estimator_list,
           stop_loss_list,
           numeric_features_list,
           times_regression_PnL_list,
@@ -40,7 +40,7 @@ def train(calc_rsi,
           {'fold': fold},
           {'n_jobs': n_jobs},
           {'symbol_list': symbol_list},
-          {'regressor_list': regressor_list},
+          {'estimator_list': estimator_list},
           {'stop_loss_list': stop_loss_list},
           {'numeric_features': numeric_features_list},
           {'times_regression_PnL_list': times_regression_PnL_list},
@@ -64,12 +64,12 @@ def train(calc_rsi,
 
     command_list = []
     for symbol in symbol_list:
-        for regressor in regressor_list:
+        for estimator in estimator_list:
             for stop_loss in stop_loss_list:
                 for times_regression_PnL in times_regression_PnL_list:
                     for nf_list in numeric_features_list:  # Numeric Features
                         for rt_list in regression_times_list:
-                            command = f'{base_cmd} -symbol={symbol}USDT -estimator={regressor} -stop-loss={stop_loss}'
+                            command = f'{base_cmd} -symbol={symbol}USDT -estimator={estimator} -stop-loss={stop_loss}'
                             command += f' -regression-profit-and-loss={times_regression_PnL} -numeric-features={nf_list} -regression-times={rt_list}'
                             if rt_list != '0':
                                 command += f' -regression-features={regression_features_list}'
@@ -120,7 +120,7 @@ def main(args):
     # List arguments
     symbol_list = get_symbol_list()
 
-    regressor_list = ['lr', 'lasso', 'ridge', 'en', 'lar', 'llar', 'omp', 'br', 'ard', 'par', 'ransac', 'tr',
+    estimator_list = ['lr', 'lasso', 'ridge', 'en', 'lar', 'llar', 'omp', 'br', 'ard', 'par', 'ransac', 'tr',
                       'huber', 'kr', 'svm', 'knn', 'dt', 'rf', 'et', 'ada', 'gbr', 'mlp', 'xgboost', 'lightgbm', 'catboost']
     stop_loss_list = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
     numeric_features_list = prepare_numeric_features_list(myenv.data_numeric_fields)
@@ -163,9 +163,9 @@ def main(args):
             aux = arg.split('=')[1]
             symbol_list = aux.split(',')
 
-        if (arg.startswith('-regressor-list=')):
+        if (arg.startswith('-estimator-list=')):
             aux = arg.split('=')[1]
-            regressor_list = aux.split(',')
+            estimator_list = aux.split(',')
 
         if (arg.startswith('-stop-loss-list=')):
             aux = arg.split('=')[1]
@@ -188,7 +188,7 @@ def main(args):
             regression_features_list = combine_list(aux.split(','))
 
     train(calc_rsi, use_gpu, normalize, verbose, use_all_data_to_train, revert, no_tune, start_train_date, start_test_date, fold, n_jobs, symbol_list,
-          regressor_list, stop_loss_list, numeric_features_list, times_regression_PnL_list, regression_times_list, regression_features_list)
+          estimator_list, stop_loss_list, numeric_features_list, times_regression_PnL_list, regression_times_list, regression_features_list)
 
 
 if __name__ == '__main__':
