@@ -18,6 +18,8 @@ python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -
 python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=lightgbm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
 python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=rbfsvm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
 
+# Train Batch no novo modelo OOP
+python . -batch-training -calc-rsi -normalize -verbose -no-tune -n-jobs=20 -start-train-date=2023-03-01 -start-test-date=2023-07-01 -symbol-list=BTC -interval-list=1h -estimator-list=knn -stop-loss-list=1,1.5,2,2.5,3,3.5 -numeric-features=close,volume -regression-PnL-list=6,24 -regression-times-list=0
 
 lr - Logistic Regression
 knn - K Neighbors Classifier
@@ -37,3 +39,4 @@ et - Extra Trees Classifier
 xgboost - Extreme Gradient Boosting
 lightgbm - Light Gradient Boosting Machine
 catboost - CatBoost Classifier
+
