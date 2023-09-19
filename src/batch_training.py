@@ -1,7 +1,6 @@
 from src.trainig import Train
 
 import sys
-import os
 import src.utils as utils
 import src.train as train
 import src.calcEMA as calc_utils
@@ -9,6 +8,7 @@ import src.myenv as myenv
 import src.send_message as sm
 import logging
 import pandas as pd
+import datetime
 
 
 class BatchTrain:
@@ -139,6 +139,7 @@ class BatchTrain:
 
         self.logger.info(f'{self.__class__.__name__}: Start Running...')
         params_list = []
+        _prm_list = []
         for interval in self.interval_list:
             for symbol in self.symbol_list:
                 for estimator in self.estimator_list:
@@ -170,10 +171,11 @@ class BatchTrain:
                                                 'normalize': self.normalize,
                                                 'fold': self.fold,
                                                 'use_all_data_to_train': self.use_all_data_to_train,
-                                                'arguments': sys.argv[1:],
+                                                'arguments': str(sys.argv[1:]),
                                                 'no_tune': self.no_tune,
                                                 'save_model': self.save_model}
                                             params_list.append(train_param)
+                                            _prm_list.append(train_param.copy())
                                     else:
                                         train_param = {
                                             'all_data': self._all_data_list[ix_symbol],
@@ -196,12 +198,18 @@ class BatchTrain:
                                             'normalize': self.normalize,
                                             'fold': self.fold,
                                             'use_all_data_to_train': self.use_all_data_to_train,
-                                            'arguments': sys.argv[1:],
+                                            'arguments': str(sys.argv[1:]),
                                             'no_tune': self.no_tune,
                                             'save_model': self.save_model}
                                         params_list.append(train_param)
+                                        _prm_list.append(train_param.copy())
 
             self.logger.info(f'Total Trainning Models: {len(params_list)}')
+
+        for _prm in _prm_list:
+            del _prm['all_data']
+
+        pd.DataFrame(_prm_list).to_csv(f'{myenv.datadir}/params_list{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.csv', index=False)
 
         results = []
         for params in params_list:

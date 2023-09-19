@@ -69,8 +69,7 @@ def calc_ema_days(df: pd.DataFrame, period_of_time: str, close_price='close') ->
         else:
             df[mme_price] = df[close_price].ewm(
                 span=count_occours, min_periods=count_occours).mean()
-            df[diff_price] = round(
-                ((df[close_price] - df[mme_price]) / df[mme_price]) * 100, 2)
+            df[diff_price] = ((df[close_price] - df[mme_price]) / df[mme_price]) * 100
     else:
         df[mme_price] = None
         df[diff_price] = None
@@ -94,8 +93,7 @@ def calc_ema_periods(df: pd.DataFrame, periods_of_time: any, close_price='close'
             df[mme_price] = df[close_price].ewm(
                 span=periods, min_periods=periods).mean()
             if diff_price:
-                df[s_diff_price] = round(
-                    ((df[close_price] - df[mme_price]) / df[mme_price]) * 100, 2)
+                df[s_diff_price] = ((df[close_price] - df[mme_price]) / df[mme_price]) * 100
     return df
 
 
@@ -115,12 +113,12 @@ def calc_RSI(df: pd.DataFrame, close_price='close', window=14, fillna=False, las
 
                 _df['rs'] = _df.avg_gain / _df.avg_loss
                 _df['rsi'] = 100 - (100 / (1 + _df.rs))
-                df.update(_df.iloc[_count - 1:_count]['rsi'].round(2))
+                df.update(_df.iloc[_count - 1:_count]['rsi'])
             except Exception as error:
                 print('calc_RSI: last_one=TRUE: Erro no calculo do RSI!', error)
                 print(df)
                 print(df.info())
-                #traceback.print_exc()
+                # traceback.print_exc()
         else:
             try:
                 df['change'] = df[close_price].diff()
@@ -130,7 +128,7 @@ def calc_RSI(df: pd.DataFrame, close_price='close', window=14, fillna=False, las
                 df['avg_loss'] = rma(df.loss.to_numpy(), window)
 
                 df['rs'] = df.avg_gain / df.avg_loss
-                df['rsi'] = (100 - (100 / (1 + df.rs))).round(2)
+                df['rsi'] = 100 - (100 / (1 + df.rs))
 
                 if fillna:
                     df['rsi'].fillna(0.0, inplace=True)
@@ -138,7 +136,7 @@ def calc_RSI(df: pd.DataFrame, close_price='close', window=14, fillna=False, las
                 print('calc_RSI: Erro no calculo do RSI!', error)
                 print(df)
                 print(df.info())
-                #traceback.print_exc()
+                # traceback.print_exc()
             finally:
                 df.drop(columns=['change', 'gain', 'loss', 'avg_gain', 'avg_loss', 'rs'], inplace=True, errors='ignore')
 

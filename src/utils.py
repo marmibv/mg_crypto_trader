@@ -321,7 +321,6 @@ def calc_diff(predict_data, validation_data, estimator):
     filtered_data['prediction_label'] = predict_data['prediction_label']
     filtered_data['diff'] = ((filtered_data['close'] - filtered_data['prediction_label']) / filtered_data['close']) * 100
     filtered_data.drop(columns=['open_time'], inplace=True)
-    filtered_data.round(2)
     return filtered_data
 
 
@@ -419,7 +418,6 @@ def regresstion_times(df_database, regression_features=['close'], regression_tim
                 features_added.append(col)
 
         df_database.dropna(inplace=True)
-        df_database = df_database.round(2)
     return df_database, features_added
 
 
@@ -639,26 +637,25 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
 
         if (operacao.startswith('SOBE') or operacao.startswith('CAI')) and not comprado:
             operacao_compra = operacao
-            valor_compra = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
+            valor_compra = _data.iloc[row_nu:row_nu + 1]['close'].values[0]
             log.info(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra:.4f}')
             comprado = True
 
         if comprado:
             diff = 100 * (_data.iloc[row_nu:row_nu + 1]['close'].values[0] - valor_compra) / valor_compra
-            # log.info(f'[{row_nu}][{operacao_compra}][{open_time}] Diff ==> {round(diff,2)}% - Comprado: {comprado}')
 
         if (abs(diff) >= stop_loss) and comprado:
-            valor_venda = round(_data.iloc[row_nu:row_nu + 1]['close'].values[0], 2)
+            valor_venda = _data.iloc[row_nu:row_nu + 1]['close'].values[0]
             if revert:
                 if operacao_compra.startswith('SOBE'):
-                    saldo -= round(saldo * (diff / 100), 2)
+                    saldo -= saldo * (diff / 100)
                 else:
-                    saldo -= round(saldo * (-diff / 100), 2)
+                    saldo -= saldo * (-diff / 100)
             else:
                 if operacao_compra.startswith('SOBE'):
-                    saldo += round(saldo * (diff / 100), 2)
+                    saldo += saldo * (diff / 100)
                 else:
-                    saldo += round(saldo * (-diff / 100), 2)
+                    saldo += saldo * (-diff / 100)
 
             log.info(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda:.4f} => Diff: {diff:.2f}% ==> PnL: $ {saldo:.2f}')
             comprado = False

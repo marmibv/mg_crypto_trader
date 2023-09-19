@@ -102,7 +102,7 @@ class Train:
             self.log.info('Prepare Test Data...')
             try:
                 self._test_data = self._all_data[(self._all_data['open_time'] > self._start_test_date)]
-                self.log.info('info after filtering train_data: ') if self._verbose else None
+                self.log.info('info after filtering test_data: ') if self._verbose else None
                 self._test_data.info() if self._verbose else None
 
                 self.log.info(f'{self.pl}: Setup model - test_data.shape: {self._test_data.shape}')
@@ -145,6 +145,7 @@ class Train:
         aux_numeric_features = self._numeric_features.split(',')
         aux_numeric_features += self._features_added
 
+        self.log.info(f'{self.pl}: Setup model - numeric_features: {aux_numeric_features}')
         self._experiement = ClassificationExperiment()
         self._setup = self._experiement.setup(data=self._train_data,
                                               train_size=self._train_size,
