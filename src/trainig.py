@@ -87,8 +87,12 @@ class Train:
             self._train_data = \
                 self._all_data[(self._all_data['open_time'] >= self._start_train_date) &
                                (self._all_data['open_time'] < self._start_test_date)]
-            self.log.info('info after filtering train_data: ')
+            self.log.info('info after filtering train_data: ') if self._verbose else None
             self._train_data.info() if self._verbose else None
+
+            self.log.info(f'{self.pl}: Setup model - train_data.shape: {self._train_data.shape}')
+            self.log.info(f'{self.pl}: Setup model - train_data: label stats: \n{self._train_data.groupby(myenv.label)[myenv.label].count()}')
+
         except Exception as e:
             self.log.error(e)
 
@@ -98,8 +102,12 @@ class Train:
             self.log.info('Prepare Test Data...')
             try:
                 self._test_data = self._all_data[(self._all_data['open_time'] > self._start_test_date)]
-                self.log.info('info after filtering train_data: ')
+                self.log.info('info after filtering train_data: ') if self._verbose else None
                 self._test_data.info() if self._verbose else None
+
+                self.log.info(f'{self.pl}: Setup model - test_data.shape: {self._test_data.shape}')
+                self.log.info(f'{self.pl}: Setup model - test_data: label stats: \n{self._test_data.groupby(myenv.label)[myenv.label].count()}')
+
             except Exception as e:
                 self.log.error(e)
 
@@ -137,8 +145,6 @@ class Train:
         aux_numeric_features = self._numeric_features.split(',')
         aux_numeric_features += self._features_added
 
-        self.log.info(f'{self.pl}: Setup model - train_data.shape: {self._train_data.shape}')
-        self.log.info(f'{self.pl}: Setup model - train_data: label stats: \n{self._train_data.groupby(myenv.label)[myenv.label].count()}')
         self._experiement = ClassificationExperiment()
         self._setup = self._experiement.setup(data=self._train_data,
                                               train_size=self._train_size,
