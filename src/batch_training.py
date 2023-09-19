@@ -150,7 +150,7 @@ class BatchTrain:
                                     if rt_list != '0':
                                         for rf_list in self.regression_features_list:
                                             train_param = {
-                                                'all_data': self._all_data_list[ix_symbol].copy(),
+                                                'all_data': self._all_data_list[ix_symbol],
                                                 'symbol': symbol,
                                                 'interval': interval,
                                                 'estimator': estimator,
@@ -176,7 +176,7 @@ class BatchTrain:
                                             params_list.append(train_param)
                                     else:
                                         train_param = {
-                                            'all_data': self._all_data_list[ix_symbol].copy(),
+                                            'all_data': self._all_data_list[ix_symbol],
                                             'symbol': symbol,
                                             'interval': interval,
                                             'estimator': estimator,

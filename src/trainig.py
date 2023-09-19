@@ -36,7 +36,7 @@ class Train:
         '''
 
         # Single arguments
-        self._all_data = params['all_data']
+        self._all_data = params['all_data'].copy()
         self._symbol = params['symbol']
         self._interval = params['interval']
         self._estimator = params['estimator']
