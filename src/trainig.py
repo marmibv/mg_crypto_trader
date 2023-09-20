@@ -144,23 +144,29 @@ class Train:
     def _model_selection(self):
         aux_numeric_features = self._numeric_features.split(',')
         aux_numeric_features += self._features_added
+        aux_all_cols = []
+        aux_all_cols += myenv.date_features
+        aux_all_cols += aux_numeric_features
+        aux_all_cols += [myenv.label]
 
+        self.log.info(f'{self.pl}: Setup model - aux_all_cols: {aux_all_cols}')
         self.log.info(f'{self.pl}: Setup model - numeric_features: {aux_numeric_features}')
         self._experiement = ClassificationExperiment()
-        self._setup = self._experiement.setup(data=self._train_data,
-                                              train_size=self._train_size,
-                                              target=myenv.label,
-                                              numeric_features=aux_numeric_features,
-                                              date_features=['open_time'],
-                                              create_date_columns=["hour", "day", "month"],
-                                              fold_strategy='timeseries',
-                                              fold=self._fold,
-                                              session_id=123,
-                                              normalize=self._normalize,
-                                              use_gpu=self._use_gpu,
-                                              verbose=self._verbose,
-                                              n_jobs=self._n_jobs,
-                                              log_experiment=self._verbose)
+        self._setup = self._experiement.setup(
+            data=self._train_data[aux_all_cols].copy(),
+            train_size=self._train_size,
+            target=myenv.label,
+            numeric_features=aux_numeric_features,
+            date_features=['open_time'],
+            create_date_columns=["hour", "day", "month"],
+            fold_strategy='timeseries',
+            fold=self._fold,
+            session_id=123,
+            normalize=self._normalize,
+            use_gpu=self._use_gpu,
+            verbose=self._verbose,
+            n_jobs=self._n_jobs,
+            log_experiment=self._verbose)
 
     def _model_training(self):
         # Accuracy	AUC	Recall	Prec.	F1	Kappa	MCC
