@@ -1,9 +1,8 @@
-import requests
 import datetime
-
+import src.myenv as myenv
 import httpx
 import asyncio
-producao = True
+import logging
 
 
 async def _send_to_telegram(message):
@@ -12,8 +11,8 @@ async def _send_to_telegram(message):
     apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
 
     try:
-        print(message)
-        if producao:
+        logging.getLogger().info(message)
+        if myenv.producao:
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             async with httpx.AsyncClient() as client:
                 await client.post(apiURL, json={'chat_id': chatID, 'text': f'[{now}]: {message}'})
@@ -21,7 +20,7 @@ async def _send_to_telegram(message):
             # response = await requests.post(apiURL, json={'chat_id': chatID, 'text': f'[{now}]: {message}'})
             # print(response.text)
     except Exception as e:
-        print(e)
+        logging.getLogger().exception(e)
 
 
 async def _send_status_to_telegram(message):
@@ -30,8 +29,8 @@ async def _send_status_to_telegram(message):
     apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
 
     try:
-        print(message)
-        if producao:
+        logging.getLogger().info(message)
+        if myenv.producao:
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             async with httpx.AsyncClient() as client:
                 await client.post(apiURL, json={'chat_id': chatID, 'text': f'[{now}]: {message}'})
@@ -39,7 +38,7 @@ async def _send_status_to_telegram(message):
             # response = await requests.post(apiURL, json={'chat_id': chatID, 'text': f'[{now}]: {message}'})
             # print(response.text)
     except Exception as e:
-        print(e)
+        logging.getLogger().exception(e)
 
 
 def send_to_telegram(message):

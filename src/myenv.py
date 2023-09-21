@@ -20,6 +20,8 @@ numeric_features = data_numeric_fields + ['rsi']
 datadir = sys.path[0] + '/data'
 logdir = sys.path[0] + '/logs'
 train_log_filename = 'train.log'
+batch_robo_log_filename = 'batch_robo.log'
+robo_log_filename = 'robo.log'
 modeldir = sys.path[0] + '/src/models'
 label = 'status'
 stop_loss = 2.0
@@ -33,3 +35,5 @@ symbol = 'BTCUSDT'
 saldo_inicial = 100
 
 sleep_refresh = 2  # seconds
+
+producao = True

@@ -95,12 +95,14 @@ class BatchTrain:
     # Class methods session
 
     def _data_collection(self):
-        self.logger.info(f'Loading data to memory: Symbols: {self.symbol_list} - Intervals: {self.interval_list}')
+        self.logger.info(
+            f'Loading data to memory: Symbols: {self.symbol_list} - Intervals: {self.interval_list}')
         for interval in self.interval_list:
             for symbol in self.symbol_list:
                 try:
                     ix_symbol = f'{symbol}{myenv.currency}_{interval}'
-                    self.logger.info(f'Loading data for symbol: {ix_symbol}...')
+                    self.logger.info(
+                        f'Loading data for symbol: {ix_symbol}...')
                     self._all_data_list[ix_symbol] = utils.get_data(
                         symbol=f'{symbol}{myenv.currency}',
                         save_database=False,
@@ -112,7 +114,8 @@ class BatchTrain:
                     # self.log.info(self._all_data_list)
                 except Exception as e:
                     self.logger.error(e)
-        self.logger.info(f'Loaded data to memory for symbols: {self.symbol_list}')
+        self.logger.info(
+            f'Loaded data to memory for symbols: {self.symbol_list}')
 
     def _data_preprocessing(self):
         self.logger.info('Prepare Train Data...')
@@ -121,20 +124,23 @@ class BatchTrain:
                 for symbol in self.symbol_list:
                     ix_symbol = f'{symbol}{myenv.currency}_{interval}'
                     try:
-                        self._all_data_list[ix_symbol] = calc_utils.calc_RSI(self._all_data_list[ix_symbol])
+                        self._all_data_list[ix_symbol] = calc_utils.calc_RSI(
+                            self._all_data_list[ix_symbol])
                         self._all_data_list[ix_symbol].dropna(inplace=True)
-                        self._all_data_list[ix_symbol].info() if self.verbose else None
+                        self._all_data_list[ix_symbol].info(
+                        ) if self.verbose else None
                     except Exception as e:
                         self.logger.error(e)
 
         if self.use_all_data_to_train:
             self.start_test_date = None
 
-    # Public methods
     def run(self):
-        self.logger.info(f'{self.__class__.__name__}: Start _data_collection...')
+        self.logger.info(
+            f'{self.__class__.__name__}: Start _data_collection...')
         self._data_collection()
-        self.logger.info(f'{self.__class__.__name__}: Start _data_preprocessing...')
+        self.logger.info(
+            f'{self.__class__.__name__}: Start _data_preprocessing...')
         self._data_preprocessing()
 
         self.logger.info(f'{self.__class__.__name__}: Start Running...')
@@ -175,7 +181,8 @@ class BatchTrain:
                                                 'no_tune': self.no_tune,
                                                 'save_model': self.save_model}
                                             params_list.append(train_param)
-                                            _prm_list.append(train_param.copy())
+                                            _prm_list.append(
+                                                train_param.copy())
                                     else:
                                         train_param = {
                                             'all_data': self._all_data_list[ix_symbol],
@@ -209,7 +216,8 @@ class BatchTrain:
         for _prm in _prm_list:
             del _prm['all_data']
 
-        pd.DataFrame(_prm_list).to_csv(f'{myenv.datadir}/params_list{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.csv', index=False)
+        pd.DataFrame(_prm_list).to_csv(
+            f'{myenv.datadir}/params_list{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.csv', index=False)
 
         results = []
         for params in params_list:
@@ -217,4 +225,5 @@ class BatchTrain:
             res = train.run()
             results.append(res)
 
-        self.logger.info(f'Results of {len(params_list)} Models execution: \n{pd.DataFrame(results, columns=["status"])["status"].value_counts()}')
+        self.logger.info(
+            f'Results of {len(params_list)} Models execution: \n{pd.DataFrame(results, columns=["status"])["status"].value_counts()}')
