@@ -49,7 +49,7 @@ def start_predict_engine(symbol,
   print(f' --> verbose: {verbose}')
   print(f' --> use_cols: {use_cols}')
 
-  model_name_init = get_model_name(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
+  model_name_init = get_model_name_to_load(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
   experiment, model = load_model(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)  # cassification_experiment
   print(f'start_predict_engine: model {model_name_init} loaded.')
 
@@ -79,7 +79,7 @@ def start_predict_engine(symbol,
     print('------------------------>>')
     print(f'start_predict_engine: Loop  -->  Symbol: {symbol} - Cont: {cont} - Now: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     try:
-      model_name = get_model_name(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
+      model_name = get_model_name_to_load(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
       if model_name != model_name_init:
         experiment, model = load_model(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)  # cassification_experiment
         model_name_init = model_name

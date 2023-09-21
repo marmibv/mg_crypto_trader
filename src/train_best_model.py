@@ -5,29 +5,23 @@ import src.utils as utils
 import src.calcEMA as calc_utils
 import src.myenv as myenv
 import logging
-import threading
 import pandas as pd
 
 
-class BatchRoboTrader:
+class TrainBestModel:
   def __init__(self,
                verbose,
-               start_date,
                log_level):
 
     # Boolean arguments
     self._verbose = verbose
     # Single arguments
-    self._start_date = start_date
     self._log_level = log_level
     # Private arguments
     self._all_data_list = {}
-    self._top_params = None
-
+    self._top_params = utils.get_top_params()
     # Initialize logging
-    self.log = logging.getLogger("batch_robo_logger")
-
-  # Class methods session
+    self.log = logging.getLogger("training_logger")
 
   def _data_collection(self):
     self.log.info(f'Loading data to memory: Symbols: {[s["symbol"] for s in self._top_params]} - Intervals: {[s["interval"] for s in self._top_params]}')
@@ -66,51 +60,54 @@ class BatchRoboTrader:
       except Exception as e:
         self.log.error(e)
 
-
-  # Public methods
-
   def run(self):
-    self.log.info(f'{self.__class__.__name__}: Start _prepare_top_params...')
-    self._top_params = utils.get_top_params()
     self.log.info(f'{self.__class__.__name__}: Start _data_collection...')
     self._data_collection()
     self.log.info(f'{self.__class__.__name__}: Start _data_preprocessing...')
     self._data_preprocessing()
 
-    self.log.info(f'{self.__class__.__name__}: Start Running...')
-    # data;symbol;interval;estimator;stop_loss;regression_times;times_regression_profit_and_loss;profit_and_loss_value;start_value;final_value;numeric_features;regression_features;train_size;use-all-data-to-train;start_train_date;start_test_date;fold;no-tune;score;model_name;arguments
     params_list = []
-    for params in self._top_params:
-      ix_symbol = f'{params["symbol"]}{myenv.currency}_{params["interval"]}'
-      robo_trader_param = {
+    for param in self._top_params:
+      n_jobs = -1
+      if (param['arguments'].startswith('-n-jobs=')):
+        n_jobs = int(param['arguments'].split('=')[1])
+
+      fold = 3
+      if (param['arguments'].startswith('-fold=')):
+        n_jobs = int(param['arguments'].split('=')[1])
+
+      ix_symbol = f'{param["symbol"]}{myenv.currency}_{param["interval"]}'
+      train_param = {
           'all_data': self._all_data_list[ix_symbol],
-          'symbol': params['symbol'],
-          'interval': params['interval'],
-          'estimator': params['estimator'],
-          'start_date': self._start_date,
-          'numeric_features': params['numeric_features'],
-          'stop_loss': params['stop_loss'],
-          'regression_times': params['regression_times'],
-          'regression_features': params['regression_features'],
-          'times_regression_profit_and_loss': params['times_regression_profit_and_loss'],
-          'calc_rsi': '-calc-rsi' in params['arguments'],
+          'symbol': param['symbol'],
+          'interval': param['interval'],
+          'estimator': param['estimator'],
+          'train_size': myenv.train_size,
+          'start_train_date': '2010-01-01',
+          'start_test_date': None,
+          'numeric_features': param['numeric_features'],
+          'stop_loss': param['stop_loss'],
+          'regression_times': param['regression_times'],
+          'regression_features': param['regression_features'],
+          'times_regression_profit_and_loss': param['times_regression_profit_and_loss'],
+          'calc_rsi': '-calc-rsi' in param['arguments'],
+          'compare_models': False,
+          'n_jobs': n_jobs,
+          'use_gpu': '-use-gpu' in param['arguments'],
           'verbose': self._verbose,
-          'arguments': params['arguments']}
-      params_list.append(robo_trader_param)
+          'normalize': '-normalize' in param['arguments'],
+          'fold': fold,
+          'use_all_data_to_train': True,
+          'arguments': param['arguments'],
+          'no_tune': '-no-tune' in param['arguments'],
+          'save_model': True}
+      params_list.append(train_param)
 
-    self.log.info(f'Total Robo Trades to start...: {len(params_list)}')
-
+    results = []
     for params in params_list:
-      model_name = utils.get_model_name_to_load(
-          symbol=params['symbol'],
-          estimator=params['estimator'],
-          stop_loss=params['stop_loss'],
-          regression_times=params['regression_times'],
-          times_regression_profit_and_loss=params['times_regression_profit_and_loss']
-      )
-      if model_name is None:
-        raise Exception(f'Best model not found: {model_name}')
+      print(params)
+      # train = Train(params)
+      # res = train.run()
+      # results.append(res)
 
-      # print(params)
-      # robo = RoboTrader(params)
-      # threading.Thread(robo.run).start()
+    self.log.info(f'Results of {len(params_list)} Models execution: \n{pd.DataFrame(results, columns=["status"])["status"].value_counts()}')

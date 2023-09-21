@@ -202,7 +202,7 @@ class Train:
           self._stop_loss,
           self._regression_times,
           self._times_regression_profit_and_loss)
-      model_name = utils.get_model_name(
+      model_name = utils.get_model_name_to_load(
           self._symbol,
           self._estimator,
           self._stop_loss,

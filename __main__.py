@@ -13,12 +13,21 @@ import src.train as tr
 import src.batch_analysis as ba
 import src.start_batch_training as bt
 import src.start_robo_trader as bot
+
+import src.utils as utils
 import sys
 # Now you can use the 'argument' variable in your script
 print("Argument provided:", sys.argv[1:])
 
 
 def main(args):
+  for arg in args:
+    if (arg.startswith('-prepare-top-parameters')):
+      print('Starting prepare-top-parameters...')
+      params = utils.prepare_top_params()
+      print(params)
+      sys.exit(0)
+
   for arg in args:
     if (arg.startswith('-train-model')):
       print('Starting training...')

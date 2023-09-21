@@ -54,7 +54,7 @@ class RoboTrader():
       self._all_data.info() if self._verbose else None
 
   def _load_model(self):
-    self._model_name_init = utils.get_model_name(
+    self._model_name_init = utils.get_model_name_to_load(
         self.symbol,
         self.estimator,
         self.stop_loss,
@@ -92,7 +92,7 @@ class RoboTrader():
       self.log.info(
           f'start_predict_engine: Loop  -->  Symbol: {self._symbol} - Cont: {cont} - Now: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
       try:
-        model_name = utils.get_model_name(
+        model_name = utils.get_model_name_to_load(
             self.symbol,
             self.estimator,
             self.stop_loss,
