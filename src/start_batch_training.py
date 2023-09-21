@@ -153,14 +153,14 @@ def main(args):
       aux = arg.split('=')[1]
       regression_features_list = combine_list(aux.split(','))
 
+  logger = configure_log(log_level)
+
   for arg in args:
     if (arg.startswith('-train-best-model')):
       print('Starting Train Best Model...')
       best = TrainBestModel(verbose, log_level)
       best.run()
       sys.exit(0)
-
-  logger = configure_log(log_level)
 
   if update_database:
     logger.info('start_batch_training: Updating database...')

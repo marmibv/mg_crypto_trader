@@ -20,14 +20,14 @@ import glob
 log = logging.getLogger()
 
 
-def prepare_top_params():
+def prepare_best_params():
   file_list = glob.glob(os.path.join(f'{myenv.datadir}/', 'resultado_simulacao_*.csv'))
   df_top_params = pd.DataFrame()
   for file_path in file_list:
     if os.path.isfile(file_path):
       df = pd.read_csv(file_path, sep=';')
     df['count_numeric_features'] = df['numeric_features'].apply(lambda x: len(x.split(',')))
-    df.sort_values(['profit_and_loss_value', 'count_numeric_features'], ascending=[False, True], inplace=True)
+    df.sort_values(['profit_and_loss_value', 'count_numeric_features'], ascending=[True, False], inplace=True)
     df_top_params = pd.concat([df_top_params, df.tail(1)], ignore_index=True)
 
   top_paramers_filename = f'{myenv.datadir}/top_params.csv'
@@ -38,12 +38,12 @@ def prepare_top_params():
   return top_params
 
 
-def get_top_params():
-  top_paramers_filename = f'{myenv.datadir}/top_params.csv'
-  if not os.path.isfile(top_paramers_filename):
-    raise Exception(f'Top Parameters not found: {top_paramers_filename}')
+def get_best_parameters():
+  top_parameters_filename = f'{myenv.datadir}/top_params.csv'
+  if not os.path.isfile(top_parameters_filename):
+    raise Exception(f'Top Parameters not found: {top_parameters_filename}')
 
-  df_top_params = pd.read_csv(top_paramers_filename, sep=';')
+  df_top_params = pd.read_csv(top_parameters_filename, sep=';')
   top_params = df_top_params.to_dict(orient='records')
   log.info(f'Top Parameters Loaded. Items: {len(top_params)}')
   return top_params

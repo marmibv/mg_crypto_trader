@@ -19,7 +19,7 @@ class TrainBestModel:
     self._log_level = log_level
     # Private arguments
     self._all_data_list = {}
-    self._top_params = utils.get_top_params()
+    self._top_params = utils.get_best_parameters()
     # Initialize logging
     self.log = logging.getLogger("training_logger")
 
@@ -50,9 +50,6 @@ class TrainBestModel:
         self._all_data_list[ix_symbol] = calc_utils.calc_RSI(self._all_data_list[ix_symbol])
         self._all_data_list[ix_symbol].dropna(inplace=True)
         self._all_data_list[ix_symbol].info() if self._verbose else None
-
-        self.log.info(f'Filtering Data for start_date: {self._start_date}')
-        self._all_data_list[ix_symbol] = self._all_data_list[ix_symbol][(self._all_data_list[ix_symbol]['open_time'] >= self._start_date)]
 
         self.log.info('info after filtering start_date: ') if self._verbose else None
         self._all_data_list[ix_symbol].info() if self._verbose else None
@@ -106,8 +103,8 @@ class TrainBestModel:
     results = []
     for params in params_list:
       print(params)
-      # train = Train(params)
-      # res = train.run()
-      # results.append(res)
+      train = Train(params)
+      res = train.run()
+      results.append(res)
 
     self.log.info(f'Results of {len(params_list)} Models execution: \n{pd.DataFrame(results, columns=["status"])["status"].value_counts()}')

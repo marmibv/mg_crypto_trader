@@ -66,12 +66,11 @@ class BatchRoboTrader:
       except Exception as e:
         self.log.error(e)
 
-
   # Public methods
 
   def run(self):
     self.log.info(f'{self.__class__.__name__}: Start _prepare_top_params...')
-    self._top_params = utils.get_top_params()
+    self._top_params = utils.get_best_parameters()
     self.log.info(f'{self.__class__.__name__}: Start _data_collection...')
     self._data_collection()
     self.log.info(f'{self.__class__.__name__}: Start _data_preprocessing...')

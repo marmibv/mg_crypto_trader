@@ -22,9 +22,9 @@ print("Argument provided:", sys.argv[1:])
 
 def main(args):
   for arg in args:
-    if (arg.startswith('-prepare-top-parameters')):
-      print('Starting prepare-top-parameters...')
-      params = utils.prepare_top_params()
+    if (arg.startswith('-prepare-best-parameters')):
+      print('Starting prepare-best-parameters...')
+      params = utils.prepare_best_params()
       print(params)
       sys.exit(0)
 
