@@ -99,10 +99,10 @@ class BatchTrain:
     for interval in self.interval_list:
       for symbol in self.symbol_list:
         try:
-          ix_symbol = f'{symbol}{myenv.currency}_{interval}'
+          ix_symbol = f'{symbol}_{interval}'
           self.logger.info(f'Loading data for symbol: {ix_symbol}...')
           self._all_data_list[ix_symbol] = utils.get_data(
-              symbol=f'{symbol}{myenv.currency}',
+              symbol=f'{symbol}',
               save_database=False,
               interval=interval,
               tail=-1,
@@ -118,7 +118,7 @@ class BatchTrain:
     if self.calc_rsi:
       for interval in self.interval_list:
         for symbol in self.symbol_list:
-          ix_symbol = f'{symbol}{myenv.currency}_{interval}'
+          ix_symbol = f'{symbol}_{interval}'
           try:
             self._all_data_list[ix_symbol] = calc_utils.calc_RSI(self._all_data_list[ix_symbol])
             self._all_data_list[ix_symbol].dropna(inplace=True)
@@ -145,7 +145,7 @@ class BatchTrain:
             for times_regression_PnL in self.times_regression_PnL_list:
               for nf_list in self.numeric_features_list:  # Numeric Features
                 for rt_list in self.regression_times_list:
-                  ix_symbol = f'{symbol}{myenv.currency}_{interval}'
+                  ix_symbol = f'{symbol}_{interval}'
                   if rt_list != '0':
                     for rf_list in self.regression_features_list:
                       train_param = {

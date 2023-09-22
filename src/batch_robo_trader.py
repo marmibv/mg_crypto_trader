@@ -5,8 +5,9 @@ import src.utils as utils
 import src.calcEMA as calc_utils
 import src.myenv as myenv
 import logging
-import threading
 import pandas as pd
+import threading
+import os
 
 
 class BatchRoboTrader:
@@ -22,21 +23,32 @@ class BatchRoboTrader:
     self._log_level = log_level
     # Private arguments
     self._all_data_list = {}
-    self._top_params = None
+    self._top_params = utils.get_best_parameters()
 
     # Initialize logging
-    self.log = logging.getLogger("batch_robo_logger")
+    self.log = self._configure_log(log_level)
+    self.log.setLevel(log_level)
 
-  # Class methods session
+  def _configure_log(self, log_level):
+    log_file_path = os.path.join(myenv.logdir, myenv.batch_robo_log_filename)
+    logging.basicConfig(
+        level=log_level,  # Set the minimum level to be logged
+        format="%(asctime)s [%(levelname)s]: %(message)s",
+        handlers=[
+            logging.FileHandler(log_file_path, mode='a', delay=True),  # Log messages to a file
+            logging.StreamHandler()  # Log messages to the console
+        ]
+    )
+    return logging.getLogger("batch_robo_logger")
 
   def _data_collection(self):
     self.log.info(f'Loading data to memory: Symbols: {[s["symbol"] for s in self._top_params]} - Intervals: {[s["interval"] for s in self._top_params]}')
     for param in self._top_params:
       try:
-        ix_symbol = f'{param["symbol"]}{myenv.currency}_{param["interval"]}'
+        ix_symbol = f'{param["symbol"]}_{param["interval"]}'
         self.log.info(f'Loading data for symbol: {ix_symbol}...')
         self._all_data_list[ix_symbol] = utils.get_data(
-            symbol=f'{param["symbol"]}{myenv.currency}',
+            symbol=f'{param["symbol"]}',
             save_database=False,
             interval=param['interval'],
             tail=-1,
@@ -50,9 +62,9 @@ class BatchRoboTrader:
   def _data_preprocessing(self):
     self.log.info('Prepare All Data...')
     for param in self._top_params:
-      ix_symbol = f'{param["symbol"]}{myenv.currency}_{param["interval"]}'
+      ix_symbol = f'{param["symbol"]}_{param["interval"]}'
       try:
-        # if self.calc_rsi:
+        self.log.info(f'Calc RSI for symbol: {ix_symbol}')
         self._all_data_list[ix_symbol] = calc_utils.calc_RSI(self._all_data_list[ix_symbol])
         self._all_data_list[ix_symbol].dropna(inplace=True)
         self._all_data_list[ix_symbol].info() if self._verbose else None
@@ -69,21 +81,18 @@ class BatchRoboTrader:
   # Public methods
 
   def run(self):
-    self.log.info(f'{self.__class__.__name__}: Start _prepare_top_params...')
-    self._top_params = utils.get_best_parameters()
     self.log.info(f'{self.__class__.__name__}: Start _data_collection...')
     self._data_collection()
     self.log.info(f'{self.__class__.__name__}: Start _data_preprocessing...')
     self._data_preprocessing()
 
     self.log.info(f'{self.__class__.__name__}: Start Running...')
-    # data;symbol;interval;estimator;stop_loss;regression_times;times_regression_profit_and_loss;profit_and_loss_value;start_value;final_value;numeric_features;regression_features;train_size;use-all-data-to-train;start_train_date;start_test_date;fold;no-tune;score;model_name;arguments
     params_list = []
     for params in self._top_params:
-      ix_symbol = f'{params["symbol"]}{myenv.currency}_{params["interval"]}'
+      ix_symbol = f'{params["symbol"]}_{params["interval"]}'
       robo_trader_param = {
           'all_data': self._all_data_list[ix_symbol],
-          'symbol': params['symbol'],
+          'symbol': f'{params["symbol"]}',
           'interval': params['interval'],
           'estimator': params['estimator'],
           'start_date': self._start_date,
@@ -94,7 +103,8 @@ class BatchRoboTrader:
           'times_regression_profit_and_loss': params['times_regression_profit_and_loss'],
           'calc_rsi': '-calc-rsi' in params['arguments'],
           'verbose': self._verbose,
-          'arguments': params['arguments']}
+          'arguments': params['arguments'],
+          'log_level': self._log_level}
       params_list.append(robo_trader_param)
 
     self.log.info(f'Total Robo Trades to start...: {len(params_list)}')
@@ -110,6 +120,18 @@ class BatchRoboTrader:
       if model_name is None:
         raise Exception(f'Best model not found: {model_name}')
 
-      # print(params)
-      # robo = RoboTrader(params)
-      # threading.Thread(robo.run).start()
+    for params in params_list:
+      # print(params['symbol'], params['estimator'], params['stop_loss'], params['regression_times'], params['times_regression_profit_and_loss'])
+      model_name = utils.get_model_name_to_load(
+          symbol=params['symbol'],
+          estimator=params['estimator'],
+          stop_loss=params['stop_loss'],
+          regression_times=params['regression_times'],
+          times_regression_profit_and_loss=params['times_regression_profit_and_loss']
+      )
+
+      self.log.info(f'Starting Robo Trader for model: {model_name}')
+      print(params)
+      robo = RoboTrader(params)
+      # robo.run()
+      threading.Thread(target=robo.run).start()

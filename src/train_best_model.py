@@ -27,16 +27,16 @@ class TrainBestModel:
     self.log.info(f'Loading data to memory: Symbols: {[s["symbol"] for s in self._top_params]} - Intervals: {[s["interval"] for s in self._top_params]}')
     for param in self._top_params:
       try:
-        ix_symbol = f'{param["symbol"]}{myenv.currency}_{param["interval"]}'
+        ix_symbol = f'{param["symbol"]}_{param["interval"]}'
         self.log.info(f'Loading data for symbol: {ix_symbol}...')
         self._all_data_list[ix_symbol] = utils.get_data(
-            symbol=f'{param["symbol"]}{myenv.currency}',
+            symbol=f'{param["symbol"]}',
             save_database=False,
             interval=param['interval'],
             tail=-1,
             columns=myenv.all_cols,
             parse_data=True,
-            updata_data_from_web=False)
+            updata_data_from_web=True)
       except Exception as e:
         self.log.error(e)
     self.log.info(f'Loaded data to memory for symbols: {[s["symbol"] for s in self._top_params]}')
@@ -44,14 +44,15 @@ class TrainBestModel:
   def _data_preprocessing(self):
     self.log.info('Prepare All Data...')
     for param in self._top_params:
-      ix_symbol = f'{param["symbol"]}{myenv.currency}_{param["interval"]}'
+      ix_symbol = f'{param["symbol"]}_{param["interval"]}'
       try:
         # if self.calc_rsi:
+        self.log.info(f'Calc RSI for symbol: {ix_symbol}')
         self._all_data_list[ix_symbol] = calc_utils.calc_RSI(self._all_data_list[ix_symbol])
         self._all_data_list[ix_symbol].dropna(inplace=True)
         self._all_data_list[ix_symbol].info() if self._verbose else None
 
-        self.log.info('info after filtering start_date: ') if self._verbose else None
+        self.log.info('info after CalcRSI start_date: ') if self._verbose else None
         self._all_data_list[ix_symbol].info() if self._verbose else None
 
       except Exception as e:
@@ -73,10 +74,10 @@ class TrainBestModel:
       if (param['arguments'].startswith('-fold=')):
         n_jobs = int(param['arguments'].split('=')[1])
 
-      ix_symbol = f'{param["symbol"]}{myenv.currency}_{param["interval"]}'
+      ix_symbol = f'{param["symbol"]}_{param["interval"]}'
       train_param = {
           'all_data': self._all_data_list[ix_symbol],
-          'symbol': param['symbol'],
+          'symbol': f'{param["symbol"]}',
           'interval': param['interval'],
           'estimator': param['estimator'],
           'train_size': myenv.train_size,
@@ -102,7 +103,6 @@ class TrainBestModel:
 
     results = []
     for params in params_list:
-      print(params)
       train = Train(params)
       res = train.run()
       results.append(res)

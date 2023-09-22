@@ -16,16 +16,6 @@ logger = None
 
 def configure_log(log_level):
   log_file_path = os.path.join(myenv.logdir, myenv.train_log_filename)
-  '''
-    # Create a TimedRotatingFileHandler that rotates every day
-    from logging.handlers import TimedRotatingFileHandler
-    handler = TimedRotatingFileHandler(
-        filename=log_file_path,
-        when="midnight",  # Rotate at midnight
-        interval=1,        # Daily rotation
-        backupCount=7      # Keep up to 7 log files (adjust as needed)
-    )
-    '''
   logging.basicConfig(
       level=log_level,  # Set the minimum level to be logged
       format="%(asctime)s [%(levelname)s]: %(message)s",

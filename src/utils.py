@@ -491,7 +491,7 @@ def get_database_name(symbol):
 def download_data(save_database=True, parse_data=False):
   symbols = pd.read_csv(datadir + '/symbol_list.csv')
   for symbol in symbols['symbol']:
-    get_data(symbol + currency, save_database=save_database, columns=myenv.all_klines_cols, parse_data=parse_data)
+    get_data(symbol, save_database=save_database, columns=myenv.all_klines_cols, parse_data=parse_data)
 
 
 def adjust_index(df):
@@ -509,6 +509,8 @@ def get_klines(symbol, interval='1h', max_date='2010-01-01', limit=1000, columns
   klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=max_date, limit=limit)
   if 'symbol' in columns:
     columns.remove('symbol')
+  if 'rsi' in columns:
+    columns.remove('rsi')
   # log.info('get_klines: columns: ', columns)
   df_klines = pd.DataFrame(data=klines, columns=all_klines_cols)[columns]
   if parse_data:
@@ -527,21 +529,23 @@ def parse_type_fields(df, parse_dates=False):
 
     for col in float_kline_cols:
       if col in df.columns:
-        df[col] = df[col].astype('float32')
+        if df[col].isna().sum() == 0:
+          df[col] = df[col].astype('float32')
 
     for col in integer_kline_cols:
       if col in df.columns:
-        df[col] = df[col].astype('int16')
+        if df[col].isna().sum() == 0:
+          df[col] = df[col].astype('int16')
 
     if parse_dates:
       for col in date_features:
         if col in df.columns:
-          df[col] = pd.to_datetime(df[col], unit='ms')
+          if df[col].isna().sum() == 0:
+            df[col] = pd.to_datetime(df[col], unit='ms')
 
   except Exception as e:
-    log.info(e)
-    log.info(df)
-    # traceback.print_exc()
+    log.exception(e)
+
   return df
 
 
@@ -739,7 +743,7 @@ def save_results(model_name,
                  res_score,
                  arguments):
 
-  simulation_results_filename = f'{myenv.datadir}/resultado_simulacao_{symbol}{myenv.currency}_{interval}.csv'
+  simulation_results_filename = f'{myenv.datadir}/resultado_simulacao_{symbol}_{interval}.csv'
   if (os.path.exists(simulation_results_filename)):
     df_resultado_simulacao = pd.read_csv(simulation_results_filename, sep=';')
   else:

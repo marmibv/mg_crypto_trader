@@ -7,34 +7,6 @@ import logging
 
 class Train:
   def __init__(self, params: dict):
-    '''
-    ## Params structure:
-    param = {
-        all_data,
-        symbol,
-        interval,
-        estimator,
-        train_size,
-        start_train_date,
-        start_test_date,
-        numeric_features,
-        stop_loss,
-        regression_times,
-        regression_features,
-        times_regression_profit_and_loss,
-        calc_rsi,
-        compare_models,
-        n_jobs,
-        use_gpu,
-        verbose,
-        normalize,
-        fold,
-        use_all_data_to_train,
-        parametros,
-        no_tune
-    }
-    '''
-
     # Single arguments
     self._all_data = params['all_data'].copy()
     self._symbol = params['symbol']
@@ -45,7 +17,6 @@ class Train:
     self._fold = int(params['fold'])
 
     self.log = logging.getLogger("training_logger")
-    self.log.info(f'{self.__class__.__name__}: Init Params: {params.keys()}')
     # List arguments
     self._start_train_date = params['start_train_date']
     self._start_test_date = params['start_test_date']
@@ -76,18 +47,20 @@ class Train:
     self._test_data = None
 
     # Prefix for log
-    self.pl = f'Train: {self._symbol}{myenv.currency}-{self._interval}-{self._estimator}'
+    self.pl = f'Train: {self._symbol}-{self._interval}-{self._estimator}'
 
   # Helper functions
   def _prepare_train_data(self):
-    self.log.info(f'Filtering train_data: start_train_date: {self._start_train_date} - start_test_date: {self._start_test_date}')
+    self.log.info(f'{self.pl}: Filtering train_data: start_train_date: {self._start_train_date} - start_test_date: {self._start_test_date}')
 
-    self.log.info('Prepare Train Data...')
+    self.log.info(f'{self.pl}: Prepare Train Data...')
     try:
-      self._train_data = \
-          self._all_data[(self._all_data['open_time'] >= self._start_train_date) &
-                         (self._all_data['open_time'] < self._start_test_date)]
-      self.log.info('info after filtering train_data: ') if self._verbose else None
+      if not self._use_all_data_to_train:
+        self._train_data = self._all_data[(self._all_data['open_time'] >= self._start_train_date) & (self._all_data['open_time'] < self._start_test_date)]
+      else:
+        self._train_data = self._all_data
+
+      self.log.info(f'{self.pl}: info after filtering train_data: ') if self._verbose else None
       self._train_data.info() if self._verbose else None
 
       self.log.info(f'{self.pl}: Setup model - train_data.shape: {self._train_data.shape}')
@@ -98,11 +71,11 @@ class Train:
 
   def _prepare_test_data(self):
     if not self._use_all_data_to_train:
-      self.log.info(f'Filtering test_data: start_test_date: {self._start_test_date}')
-      self.log.info('Prepare Test Data...')
+      self.log.info(f'{self.pl}: Filtering test_data: start_test_date: {self._start_test_date}')
+      self.log.info(f'{self.pl}: Prepare Test Data...')
       try:
         self._test_data = self._all_data[(self._all_data['open_time'] > self._start_test_date)]
-        self.log.info('info after filtering test_data: ') if self._verbose else None
+        self.log.info(f'{self.pl}: Info after filtering test_data: ') if self._verbose else None
         self._test_data.info() if self._verbose else None
 
         self.log.info(f'{self.pl}: Setup model - test_data.shape: {self._test_data.shape}')
@@ -123,7 +96,7 @@ class Train:
           self._regression_features,
           self._regression_times,
           last_one=False)
-      self.log.info(f'{self.pl}: info after calculating regresstion_times: ')
+      self.log.info(f'{self.pl}: Info after calculating regresstion_times: ')
       self._all_data.info() if self._verbose else None
 
     self.log.info(f'{self.pl}: calculating regression_profit_and_loss - times: {self._times_regression_profit_and_loss} - stop_loss: {self._stop_loss}')

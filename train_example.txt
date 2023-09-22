@@ -1,42 +1,5 @@
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=lr -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=knn -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=nb -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=dt -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=svm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=gpc -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=mlp -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=ridge -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=rf -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=qda -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=ada -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=gbc -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=lda -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=et -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=catboost -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
+# Prepare Best Params
+python . -prepare-best-parameters
 
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=xgboost -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=lightgbm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-python . -train-model -calc-rsi -normalize -verbose -all-cols  -symbol=BTCUSDT -n-jobs=20 -estimator=rbfsvm -regression-times=0 -start-train-date=2010-01-01 -start-test-date=2023-01-01
-
-# Train Batch no novo modelo OOP
-python . -batch-training -calc-rsi -normalize -verbose -no-tune -n-jobs=20 -start-train-date=2023-03-01 -start-test-date=2023-07-01 -symbol-list=AVAX -interval-list=1h -estimator-list=knn -stop-loss-list=1,1.5,2,2.5,3,3.5 -numeric-features=close,volume -regression-PnL-list=6,24 -regression-times-list=0
-
-lr - Logistic Regression
-knn - K Neighbors Classifier
-nb - Naive Bayes
-dt - Decision Tree Classifier
-svm - SVM - Linear Kernel
-rbfsvm - SVM - Radial Kernel
-gpc - Gaussian Process Classifier
-mlp - MLP Classifier
-ridge - Ridge Classifier
-rf - Random Forest Classifier
-qda - Quadratic Discriminant Analysis
-ada - Ada Boost Classifier
-gbc - Gradient Boosting Classifier
-lda - Linear Discriminant Analysis
-et - Extra Trees Classifier
-xgboost - Extreme Gradient Boosting
-lightgbm - Light Gradient Boosting Machine
-catboost - CatBoost Classifier
-
+# Train Best Models
+python . -batch-training -train-best-model
