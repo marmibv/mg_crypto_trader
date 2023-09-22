@@ -463,35 +463,35 @@ def get_max_date(df_database):
   return max_date
 
 
-def get_database(symbol, tail=-1, columns=['open_time', 'close'], parse_data=True):
-  database_name = get_database_name(symbol)
+def get_database(symbol, interval='1h', tail=-1, columns=['open_time', 'close'], parse_data=True):
+  database_name = get_database_name(symbol, interval)
   log.info(f'get_database: name: {database_name}')
 
   df_database = pd.DataFrame()
   log.info(f'get_database: columns: {columns}')
   if os.path.exists(database_name):
     if parse_data:
-      df_database = pd.read_csv(database_name, sep=';', parse_dates=date_features, date_parser=date_parser, decimal='.', usecols=columns)
+      df_database = pd.read_csv(database_name, sep=';', parse_dates=date_features, date_parser=date_parser, decimal='.', usecols=columns, compression=dict(method='zip'))
       df_database = parse_type_fields(df_database)
     else:
-      df_database = pd.read_csv(database_name, sep=';', decimal='.', usecols=columns)
+      df_database = pd.read_csv(database_name, sep=';', decimal='.', usecols=columns, compression=dict(method='zip'))
     df_database = adjust_index(df_database)
     df_database = df_database[columns]
   if tail > 0:
     df_database = df_database.tail(tail).copy()
-  log.info(f'get_database: count_rows: {df_database.shape[0]} - symbol: {symbol} - tail: {tail}')
+  log.info(f'get_database: count_rows: {df_database.shape[0]} - symbol: {symbol}_{interval} - tail: {tail}')
   log.info(f'get_database: duplicated: {df_database.index.duplicated().sum()}')
   return df_database
 
 
-def get_database_name(symbol):
-  return datadir + '/' + symbol + '/' + symbol + '.csv'
+def get_database_name(symbol, interval):
+  return f'{datadir}/{symbol}/{symbol}_{interval}.dat'
 
 
-def download_data(save_database=True, parse_data=False):
+def download_data(save_database=True, parse_data=False, interval='1h'):
   symbols = pd.read_csv(datadir + '/symbol_list.csv')
   for symbol in symbols['symbol']:
-    get_data(symbol, save_database=save_database, columns=myenv.all_klines_cols, parse_data=parse_data)
+    get_data(symbol=symbol, save_database=save_database, interval=interval, columns=myenv.all_klines_cols, parse_data=parse_data)
 
 
 def adjust_index(df):
@@ -550,14 +550,16 @@ def parse_type_fields(df, parse_dates=False):
 
 
 def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open_time', 'close'], parse_data=True, updata_data_from_web=True):
-  database_name = get_database_name(symbol)
-  df_database = get_database(symbol, tail, columns=columns, parse_data=parse_data)
+  database_name = get_database_name(symbol, interval)
+  df_database = get_database(symbol=symbol, interval=interval, tail=tail, columns=columns, parse_data=parse_data)
 
   max_date = get_max_date(df_database)
   max_date_aux = ''
+  new_data = False
   if updata_data_from_web:
     log.info(f'get_data: Downloading data for symbol: {symbol} - max_date: {max_date}')
     while (max_date != max_date_aux):
+      new_data = True
       log.info(f'get_data: max_date: {max_date} - max_date_aux: {max_date_aux}')
       max_date_aux = get_max_date(df_database)
       log.info(f'get_data: Max date database: {max_date_aux}')
@@ -568,11 +570,12 @@ def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open
       df_database.sort_index(inplace=True)
       df_database['symbol'] = symbol
       max_date = get_max_date(df_database)
-      if save_database:
-        if not os.path.exists(database_name.removesuffix(f'{symbol}.csv')):
-          os.makedirs(database_name.removesuffix(f'{symbol}.csv'))
-        df_database.to_csv(database_name, sep=';', index=False)
-        log.info(f'get_data: Database updated at {database_name}')
+      sulfix_name = f'{symbol}_{interval}.csv'
+  if save_database and new_data:
+    if not os.path.exists(database_name.removesuffix(sulfix_name)):
+      os.makedirs(database_name.removesuffix(sulfix_name))
+    df_database.to_csv(database_name, sep=';', index=False, compression=dict(method='zip'))
+    log.info(f'get_data: Database updated at {database_name}')
   return df_database
 
 
@@ -696,7 +699,7 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
         else:
           saldo += saldo * (-diff / 100)
 
-      log.info(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda:.4f} => Diff: {diff:.2f}% ==> PnL: $ {saldo:.2f}')
+      log.debug(f'[{row_nu}][{operacao_compra}][{open_time}] => Venda: {valor_venda:.4f} => Diff: {diff:.2f}% ==> PnL: $ {saldo:.2f}')
       comprado = False
     # Fim simulação
 

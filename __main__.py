@@ -25,7 +25,7 @@ log = None
 
 
 def configure_log(log_level=logging.INFO):
-  log_file_path = os.path.join(myenv.logdir, "trader.log")
+  log_file_path = os.path.join(myenv.logdir, "main_process_trader.log")
   '''
     # Create a TimedRotatingFileHandler that rotates every day
     from logging.handlers import TimedRotatingFileHandler
@@ -45,10 +45,22 @@ def configure_log(log_level=logging.INFO):
       ]
   )
   return logging.getLogger("main_trader_log")
-
+def configure_log(log_level):
+  log_file_path = os.path.join(myenv.logdir, myenv.main_log_filename)
+  logger = logging.getLogger('main_trader_log')
+  logger.setLevel(log_level)
+  fh = logging.FileHandler(log_file_path, mode='a', delay=True)
+  fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+  fh.setLevel(log_level)
+  logger.addHandler(fh)
+  logger.addHandler(logging.StreamHandler())
+  return logger
 
 def main(args):
   log_level = logging.INFO
+  interval_list = ['1h']
+
+  # Generic Params
   for arg in args:
     if (arg.startswith('-log-level=DEBUG')):
       log_level = logging.DEBUG
@@ -58,52 +70,49 @@ def main(args):
       log_level = logging.INFO
     if (arg.startswith('-log-level=ERROR')):
       log_level = logging.ERROR
+    if (arg.startswith('-interval-list=')):
+      aux = arg.split('=')[1]
+      interval_list = aux.split(',')
 
   log = configure_log(log_level)
-  for arg in args:
-    if (arg.startswith('-prepare-best-parameters')):
-      log.info('Starting prepare-best-parameters...')
-      params = utils.prepare_best_params()
-      log.info(params)
-      sys.exit(0)
+  if '-download-data' in args:
+    for interval in interval_list:
+      log.info(f'Starting download data, in interval ({interval}) for all Symbols in database...')
+      utils.download_data(save_database=True, parse_data=False, interval=interval)
+    sys.exit(0)
 
-  for arg in args:
-    if (arg.startswith('-download-data')):
-      log.info('Starting download data for all Symbols in database...')
-      utils.download_data(save_database=True, parse_data=False)
-      sys.exit(0)
+  if '-prepare-best-parameters' in args:
+    log.info('Starting prepare-best-parameters...')
+    params = utils.prepare_best_params()
+    log.info(params)
+    sys.exit(0)
 
-  for arg in args:
-    if (arg.startswith('-train-model')):
-      log.info('Starting training...')
-      if tr.main(args):
-        log.info('Trainin completed ** SUCCESS **')
-      else:
-        log.info('Trainin ** FAILS **')
-      sys.exit(0)
+  if '-train-model' in args:
+    log.info('Starting training...')
+    if tr.main(args):
+      log.info('Trainin completed ** SUCCESS **')
+    else:
+      log.info('Trainin ** FAILS **')
+    sys.exit(0)
 
-  for arg in args:
-    if (arg.startswith('-simule-trading')):
-      tr.exec_simule_trading(args)
-      sys.exit(0)
+  if '-simule-trading' in args:
+    tr.exec_simule_trading(args)
+    sys.exit(0)
 
-  for arg in args:
-    if (arg.startswith('-run-bot')):
-      log.info('Starting bot...')
-      bot.main(args)
-      sys.exit(0)
+  if '-run-bot' in args:
+    log.info('Starting bot...')
+    bot.main(args)
+    sys.exit(0)
 
-  for arg in args:
-    if (arg.startswith('-batch-analysis')):
-      log.info('Starting batch analysis...')
-      ba.main(args)
-      sys.exit(0)
+  if '-batch-analysis' in args:
+    log.info('Starting batch analysis...')
+    ba.main(args)
+    sys.exit(0)
 
-  for arg in args:
-    if (arg.startswith('-batch-training')):
-      log.info('Starting batch training...')
-      bt.main(args)
-      sys.exit(0)
+  if '-batch-training' in args:
+    log.info('Starting batch training...')
+    bt.main(args)
+    sys.exit(0)
 
 
 if __name__ == '__main__':

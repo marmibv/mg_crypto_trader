@@ -99,17 +99,18 @@ class Train:
       self.log.info(f'{self.pl}: Info after calculating regresstion_times: ')
       self._all_data.info() if self._verbose else None
 
-    self.log.info(f'{self.pl}: calculating regression_profit_and_loss - times: {self._times_regression_profit_and_loss} - stop_loss: {self._stop_loss}')
-    self._all_data = utils.regression_PnL(
-        data=self._all_data,
-        label=myenv.label,
-        diff_percent=self._stop_loss,
-        max_regression_profit_and_loss=self._times_regression_profit_and_loss,
-        drop_na=True,
-        drop_calc_cols=True,
-        strategy=None)
-    self.log.info(f'{self.pl}: info after calculating regression_profit_and_loss: ')
-    self._all_data.info() if self._verbose else None
+    if myenv.label not in self._all_data.columns:
+      self.log.info(f'{self.pl}: calculating regression_profit_and_loss - times: {self._times_regression_profit_and_loss} - stop_loss: {self._stop_loss}')
+      self._all_data = utils.regression_PnL(
+          data=self._all_data,
+          label=myenv.label,
+          diff_percent=self._stop_loss,
+          max_regression_profit_and_loss=self._times_regression_profit_and_loss,
+          drop_na=True,
+          drop_calc_cols=True,
+          strategy=None)
+      self.log.info(f'{self.pl}: info after calculating regression_profit_and_loss: ')
+      self._all_data.info() if self._verbose else None
 
     self._prepare_train_data()
     self._prepare_test_data()

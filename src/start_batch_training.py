@@ -16,15 +16,14 @@ logger = None
 
 def configure_log(log_level):
   log_file_path = os.path.join(myenv.logdir, myenv.train_log_filename)
-  logging.basicConfig(
-      level=log_level,  # Set the minimum level to be logged
-      format="%(asctime)s [%(levelname)s]: %(message)s",
-      handlers=[
-          logging.FileHandler(log_file_path, mode='a', delay=True),  # Log messages to a file
-          logging.StreamHandler()  # Log messages to the console
-      ]
-  )
-  return logging.getLogger("training_logger")
+  logger = logging.getLogger('training_logger')
+  logger.setLevel(log_level)
+  fh = logging.FileHandler(log_file_path, mode='a', delay=True)
+  fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+  fh.setLevel(log_level)
+  logger.addHandler(fh)
+  logger.addHandler(logging.StreamHandler())
+  return logger
 
 
 def main(args):
@@ -129,6 +128,8 @@ def main(args):
 
     if (arg.startswith('-numeric-features=')):
       aux = arg.split('=')[1]
+      if ('-calc-rsi' in args) and ('rsi' not in aux):
+        aux += ',rsi'
       numeric_features_list = prepare_numeric_features_list(aux.split(','))
 
     if (arg.startswith('-regression-PnL-list=')):
@@ -145,12 +146,11 @@ def main(args):
 
   logger = configure_log(log_level)
 
-  for arg in args:
-    if (arg.startswith('-train-best-model')):
-      print('Starting Train Best Model...')
-      best = TrainBestModel(verbose, log_level)
-      best.run()
-      sys.exit(0)
+  if '-train-best-model' in args:
+    print('Starting Train Best Model...')
+    best = TrainBestModel(verbose, log_level)
+    best.run()
+    sys.exit(0)
 
   if update_database:
     logger.info('start_batch_training: Updating database...')
