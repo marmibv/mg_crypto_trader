@@ -109,6 +109,8 @@ class BatchTrain:
               columns=myenv.all_cols,
               parse_data=True,
               updata_data_from_web=self.update_data_from_web)
+          if self._all_data_list[ix_symbol].shape[0] == 0:
+            raise Exception(f'Data for symbol: {ix_symbol} is empty')
         except Exception as e:
           self.logger.error(e)
     self.logger.info(f'Loaded data to memory for symbols: {self.symbol_list}')

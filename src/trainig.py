@@ -89,7 +89,7 @@ class Train:
     return
 
   def _feature_engineering(self):
-    if int(self._regression_times) > 0:
+    if (self._regression_times is not None) and int(self._regression_times) > 0:
       self.log.info(f'{self.pl}: calculating regresstion_times: {self._regression_times} - regression_features: {self._regression_features}')
       self._all_data, self._features_added = utils.regresstion_times(
           self._all_data,
