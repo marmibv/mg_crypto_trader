@@ -125,6 +125,75 @@ def increment_time(interval='1h'):
       return pd.Timedelta(days=30)
 
 
+def get_latest_interval_day(ix_time, interval):
+  _ix_aux = ix_time.replace(hour=0, minute=0, second=0, microsecond=0)
+  day = ix_time.day - interval
+  for i in range(day, -1, -1):
+    if (i <= day) and (i % interval == 0):
+      _ix_aux = _ix_aux.replace(hour=i, minute=0, second=0, microsecond=0)
+      break
+  return _ix_aux
+
+
+def get_latest_interval_hours(ix_time, interval):
+  _ix_aux = ix_time.replace(minute=0, second=0, microsecond=0)
+  hour = ix_time.hour - interval
+  for i in range(hour, -1, -1):
+    if (i <= hour) and (i % interval == 0):
+      _ix_aux = _ix_aux.replace(hour=i, minute=0, second=0, microsecond=0)
+      break
+  return _ix_aux
+
+
+def get_latest_interval_minutes(ix_time, interval):
+  _ix_aux = ix_time.replace(second=00, microsecond=00)
+  min = ix_time.minute - interval
+  for i in range(min, -1, -1):
+    if (i <= min) and (i % interval == 0):
+      _ix_aux = _ix_aux.replace(minute=i, second=00, microsecond=00)
+      break
+  return _ix_aux
+
+
+def get_latest_close_time(interval='1h'):
+  client = Client()
+  time = client.get_server_time()
+  ix = pd.to_datetime(time['serverTime'], unit='ms')
+
+  match(interval):
+    case '1min':
+      return get_latest_interval_minutes(ix, 1)
+    case '3min':
+      return get_latest_interval_minutes(ix, 3)
+    case '5min':
+      return get_latest_interval_minutes(ix, 5)
+    case '15min':
+      return get_latest_interval_minutes(ix, 15)
+    case '30min':
+      return get_latest_interval_minutes(ix, 30)
+    case '1h':
+      return get_latest_interval_hours(ix, 1)
+    case '2h':
+      return get_latest_interval_hours(ix, 2)
+    case '4h':
+      return get_latest_interval_hours(ix, 4)
+    case '6h':
+      return get_latest_interval_hours(ix, 6)
+    case '8h':
+      return get_latest_interval_hours(ix, 8)
+    case '12h':
+      return get_latest_interval_hours(ix, 12)
+    case '1d':
+      return get_latest_interval_day(ix, 1)
+    case '3d':
+      return get_latest_interval_day(ix, 3)
+    case '1w':
+      return get_latest_interval_day(ix, 7)
+    case '1M':
+      return get_latest_interval_day(ix, 30)
+  raise Exception(f'Wrong interval: {interval}.')
+
+
 def date_parser(x):
   return pd.to_datetime(x, unit='ms')
 

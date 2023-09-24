@@ -103,6 +103,7 @@ class RoboTrader():
     saldo = myenv.saldo_inicial
     self.log.info(f'{self.pl}: starting loop monitoring...')
     self._all_data.info() if self._verbose else None
+    latest_time = None
     while True:
       self.log.info(f'------------------------>>')
       self.log.info(f'{self.pl}: Loop  -->  Symbol: {self._symbol} - Cont: {cont} - Now: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
@@ -129,70 +130,72 @@ class RoboTrader():
         open_time = self._all_data.tail(1)["open_time"].dt.strftime('%Y-%m-%d %H:%M:%S').values[0]
         self.log.info(f'{self.pl}: max_date: {max_date}')
 
-        df_klines = utils.get_klines(symbol=self._symbol, max_date=max_date.strftime('%Y-%m-%d'), limit=1, columns=list(self._all_data.columns).copy())
+        df_klines = utils.get_klines(symbol=self._symbol, max_date=None, limit=2, columns=list(self._all_data.columns).copy())
         df_klines['symbol'] = self._symbol
+        open_time = df_klines.iloc[0:1]['open_time'].values[0]
+        if open_time != latest_time:
+          latest_time = open_time
+          df_klines.info() if self._verbose else None
 
-        df_klines.info() if self._verbose else None
+          self._all_data = pd.concat([self._all_data, df_klines])
+          self.log.debug(f'{self.pl}: Data updated from klines. all_data.shape: {self._all_data.shape}')
 
-        self._all_data = pd.concat([self._all_data, df_klines])
-        self.log.debug(f'{self.pl}: Data updated from klines. all_data.shape: {self._all_data.shape}')
+          self._all_data.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
+          self.log.debug(f'{self.pl}: Drop duplicates. all_data.shape: {self._all_data.shape}')
 
-        self._all_data.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
-        self.log.debug(f'{self.pl}: Drop duplicates. all_data.shape: {self._all_data.shape}')
+          self._all_data.sort_index(inplace=True)
+          self.log.debug(f'{self.pl}: Sort Index. all_data.shape: {self._all_data.shape}')
 
-        self._all_data.sort_index(inplace=True)
-        self.log.debug(f'{self.pl}: Sort Index. all_data.shape: {self._all_data.shape}')
+          self.log.info(f'{self.pl}: Updated data - all_data.shape: {self._all_data.shape}')
 
-        self.log.info(f'{self.pl}: Updated data - all_data.shape: {self._all_data.shape}')
+          if self._calc_rsi:
+            self.log.info(f'{self.pl}: Start Calculating RSI...')
+            self._all_data = calc_utils.calc_RSI(self._all_data)  # , last_one=True)
+            self.log.debug(f'{self.pl}: After Calculating RSI. all_data.shape: {self._all_data.shape}')
 
-        if self._calc_rsi:
-          self.log.info(f'{self.pl}: Start Calculating RSI...')
-          self._all_data = calc_utils.calc_RSI(self._all_data)  # , last_one=True)
-          self.log.debug(f'{self.pl}: After Calculating RSI. all_data.shape: {self._all_data.shape}')
+          self.log.info(f'{self.pl}: regression_times {self._regression_times}...')
+          if (self._regression_times is not None) and (self._regression_times > 0):
+            self._all_data, _ = utils.regresstion_times(self._all_data, self._numeric_features, self._regression_times, last_one=True)
 
-        self.log.info(f'{self.pl}: regression_times {self._regression_times}...')
-        if (self._regression_times is not None) and (self._regression_times > 0):
-          self._all_data, _ = utils.regresstion_times(self._all_data, self._numeric_features, self._regression_times, last_one=True)
+          # Calculo compra e venda
+          valor_atual = self._all_data.tail(1)["close"].values[0]
+          self.log.info(f'{self.pl}: valor_atual: >> $ {valor_atual:.4f} <<')
 
-        # Calculo compra e venda
-        valor_atual = self._all_data.tail(1)["close"].values[0]
-        self.log.info(f'{self.pl}: valor_atual: >> $ {valor_atual:.4f} <<')
+          if comprado:
+            diff = 100 * (valor_atual - valor_compra) / valor_compra
 
-        if comprado:
-          diff = 100 * (valor_atual - valor_compra) / valor_compra
-
-        if (abs(diff) >= self._stop_loss) and comprado:
-          if operacao_compra.startswith('SOBE'):
-            saldo += saldo * (diff / 100)
-          else:
-            saldo += saldo * (-diff / 100)
-          msg = f'Venda: Symbol: {self._symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - \
-Valor Venda: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: $ {saldo:.2f}'
-          sm.send_to_telegram(msg)
-          # Reset variaveis
-          comprado = False
-          valor_compra = 0
-          operacao_compra = ''
-        # Fim calculo compra e venda
-
-        self._all_data.info() if self._verbose else None
-        self.log.debug(f'{self.pl}: tail(1):\n {self._all_data.tail(1)}')
-        if not comprado:
-          self.log.info(f'{self.pl}: start predict_model...')
-          df_predict = self._experiment.predict_model(self._model, self._all_data.tail(1), verbose=self._verbose)
-          # Inicio calculo compra
-          operacao = df_predict['prediction_label'].values[0]
-          self.log.info(f'{self.pl}: operacao predita: {operacao}')
-          if (operacao.startswith('SOBE') or operacao.startswith('CAI')):
-            comprado = True
-            valor_compra = df_predict.tail(1)["close"].values[0]
-            operacao_compra = operacao
-            rsi = df_predict.tail(1)["rsi"].values[0]
-
-            msg = f'Compra: Symbol: {self._symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - \
-RSI: {rsi:.2f} - PnL: $ {saldo:.2f}'
+          if (abs(diff) >= self._stop_loss) and comprado:
+            if operacao_compra.startswith('SOBE'):
+              saldo += saldo * (diff / 100)
+            else:
+              saldo += saldo * (-diff / 100)
+            msg = f'Venda: Symbol: {self._symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - \
+  Valor Venda: {valor_atual:.4f} - Variação: {diff:.4f}% - PnL: $ {saldo:.2f}'
             sm.send_to_telegram(msg)
-          # Fim calculo compra
+            # Reset variaveis
+            comprado = False
+            valor_compra = 0
+            operacao_compra = ''
+          # Fim calculo compra e venda
+
+          self._all_data.info() if self._verbose else None
+          self.log.debug(f'{self.pl}: tail(1):\n {self._all_data.tail(1)}')
+          if not comprado:
+            self.log.info(f'{self.pl}: start predict_model...')
+            df_predict = self._experiment.predict_model(self._model, self._all_data.tail(1), verbose=self._verbose)
+            # Inicio calculo compra
+            operacao = df_predict['prediction_label'].values[0]
+            self.log.info(f'{self.pl}: operacao predita: {operacao}')
+            if (operacao.startswith('SOBE') or operacao.startswith('CAI')):
+              comprado = True
+              valor_compra = df_predict.tail(1)["close"].values[0]
+              operacao_compra = operacao
+              rsi = df_predict.tail(1)["rsi"].values[0]
+
+              msg = f'Compra: Symbol: {self._symbol} - open_time: {open_time} - Operação: {operacao_compra} - Valor Comprado: {valor_compra:.4f} - \
+  RSI: {rsi:.2f} - PnL: $ {saldo:.2f}'
+              sm.send_to_telegram(msg)
+            # Fim calculo compra
       except Exception as e:
         self.log.error(e)
         self.log.exception(e)
