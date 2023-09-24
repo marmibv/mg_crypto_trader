@@ -1,4 +1,4 @@
-# MG Crypto Trader
+# MG Crypto Trader **under construction**
 ## Crypto Trading Bots to automate your Crypto trading strategies and amplify profits
 
 ### Telegram Channel: https://t.me/+TyYGz3qscfk0YjQx
