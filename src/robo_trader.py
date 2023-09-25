@@ -110,7 +110,7 @@ class RoboTrader():
     rsi = 0.0
     account_balance = utils.get_account_balance()
     balance = account_balance['balance']
-
+    profit_and_loss = 0.0
     params_operation = utils.get_latest_operation(self._symbol, self._interval)
     print(params_operation)
     if len(params_operation) > 0 and params_operation['operation'] == 'BUY':
@@ -123,10 +123,10 @@ class RoboTrader():
       amount_invested = float(params_operation['amount_invested'])
       rsi = float(params_operation['rsi'])
       msg = f'Compra: Symbol: {self._symbol} - open_time: {open_time.strftime("%Y-%m-%d %H:%M:%S")} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-  RSI: {rsi:.2f} - PnL: $ {amount_invested:.2f}'
+  RSI: {rsi:.2f} - PnL: $ {amount_invested:.2f} - Balance: {balance:.2f}'
       sm.send_to_telegram(msg)
       print("************ COMPRADO ************")
-      sys.exit(0)
+      #sys.exit(0)
     self.log.info(f'{self.pl}: starting loop monitoring...')
     self._all_data.info() if self._verbose else None
     latest_time = None
@@ -161,6 +161,9 @@ class RoboTrader():
         df_klines = utils.get_klines(symbol=self._symbol, max_date=None, limit=2, columns=list(self._all_data.columns).copy())
         df_klines = df_klines.iloc[0:1]
         df_klines['symbol'] = self._symbol
+
+        now_price = df_klines['close'].values[0] 
+        self.log.info(f'{self.pl} - Now Price: {now_price}')
         aux_open_time = df_klines['open_time'].values[0]
         if aux_open_time != latest_time:
           latest_time = aux_open_time
@@ -211,6 +214,7 @@ class RoboTrader():
                                 'take_profit': take_profit,
                                 'stop_loss': stop_loss,
                                 'purchase_price': purchase_price,
+                                'sell_price': now_price,
                                 'PnL': profit_and_loss - amount_invested,
                                 'rsi': rsi,
                                 'status': operation,
@@ -219,12 +223,13 @@ class RoboTrader():
             utils.register_account_balance(balance)
 
             msg = f'Venda: Symbol: {self._symbol} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-  Valor Venda: {now_price:.4f} - Variação: {diff:.4f}% - PnL: $ {amount_invested:.2f}'
+Valor Venda: {now_price:.4f} - Variação: {diff:.4f}% - PnL: $ {amount_invested:.2f} - Balance: {balance:.2f}'
             sm.send_to_telegram(msg)
             # Reset variaveis
             purchased = False
-            purchase_price = 0
+            purchase_price = 0.0
             purchase_operation = ''
+            amount_invested = 0.0
           # End Sell Cals
 
           self._all_data.info() if self._verbose else None
@@ -261,6 +266,7 @@ class RoboTrader():
                                   'take_profit': take_profit,
                                   'stop_loss': stop_loss,
                                   'purchase_price': purchase_price,
+                                  'sell_price': 0.0,
                                   'PnL': 0,
                                   'rsi': rsi,
                                   'status': operation,
@@ -269,7 +275,7 @@ class RoboTrader():
               utils.register_account_balance(balance)
 
               msg = f'Compra: Symbol: {self._symbol} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-  RSI: {rsi:.2f} - PnL: $ {amount_invested:.2f}'
+  RSI: {rsi:.2f} - PnL: $ {amount_invested:.2f} - Balance: {balance}'
               sm.send_to_telegram(msg)
 
             # Fim calculo compra
@@ -285,8 +291,8 @@ class RoboTrader():
           cont_aviso = 0
           if purchased:
             msg = f'*COMPRADO*: Symbol: {self._symbol} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-Valor Atual: {now_price:.4f} - Variação: {diff:.4f}% - PnL: $ {amount_invested:.2f}'
+Valor Atual: {now_price:.4f} - Variação: {diff:.4f}% - PnL: $ {amount_invested:.2f} - Balance: {balance:.2f}'
             sm.send_status_to_telegram(msg)
           else:
-            msg = f'*NÃO COMPRADO*: Symbol: {self._symbol} - open_time: {open_time} - Valor Atual: {now_price:.4f} - PnL: $ {amount_invested:.2f}'
+            msg = f'*NÃO COMPRADO*: Symbol: {self._symbol} - open_time: {open_time} - Valor Atual: {now_price:.4f} - Balance: {balance:.2f}'
             sm.send_status_to_telegram(msg)
