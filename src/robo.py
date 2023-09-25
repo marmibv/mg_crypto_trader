@@ -21,6 +21,7 @@ import numpy as np
 
 
 def start_predict_engine(symbol,
+                         interval,
                          estimator='xgboost',
                          tail=-1,
                          start_train_date='2010-01-01',
@@ -49,8 +50,8 @@ def start_predict_engine(symbol,
   print(f' --> verbose: {verbose}')
   print(f' --> use_cols: {use_cols}')
 
-  model_name_init = get_model_name_to_load(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
-  experiment, model = load_model(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)  # cassification_experiment
+  model_name_init = get_model_name_to_load(symbol, interval, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
+  experiment, model = load_model(symbol, interval, estimator, stop_loss, regression_times, times_regression_profit_and_loss)  # cassification_experiment
   print(f'start_predict_engine: model {model_name_init} loaded.')
 
   df_database, _ = prepare_all_data(symbol,
@@ -79,9 +80,9 @@ def start_predict_engine(symbol,
     print('------------------------>>')
     print(f'start_predict_engine: Loop  -->  Symbol: {symbol} - Cont: {cont} - Now: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     try:
-      model_name = get_model_name_to_load(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
+      model_name = get_model_name_to_load(symbol, interval, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
       if model_name != model_name_init:
-        experiment, model = load_model(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)  # cassification_experiment
+        experiment, model = load_model(symbol, interval, estimator, stop_loss, regression_times, times_regression_profit_and_loss)  # cassification_experiment
         model_name_init = model_name
         sm.send_status_to_telegram(f'start_predict_engine: reload new model. New model name: {model_name} - Old model name: {model_name_init}')
 

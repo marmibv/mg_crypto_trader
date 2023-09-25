@@ -83,8 +83,7 @@ def main(args):
 
     # Single arguments
     if (arg.startswith('-start-train-date=')):
-      start_train_date = arg.split('=')[1
-                                        ]
+      start_train_date = arg.split('=')[1]
     if (arg.startswith('-start-test-date=')):
       start_test_date = arg.split('=')[1]
 

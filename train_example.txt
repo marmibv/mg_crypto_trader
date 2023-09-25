@@ -12,3 +12,5 @@ python . -batch-training -train-best-model
 
 # 4o Run Bots
 python . -run-bot -start-date=2023-06-01 -log-level=INFO
+
+python . -batch-training -calc-rsi -normalize -no-tune -update-data-from-web -n-jobs=20 -symbol-list=BTCUSDT -interval-list=1m -estimator-list=knn -stop-loss-list=1.5,2.0 -numeric-features=quote_asset_volume,number_of_trades,taker_buy_base_asset_volume,taker_buy_quote_asset_volume -regression-PnL-list=30,60,120 -regression-times-list=0  -start-train-date=2023-01-01 -start-test-date=2023-09-01

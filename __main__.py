@@ -24,41 +24,30 @@ print("Argument provided:", sys.argv[1:])
 log = None
 
 
-def configure_log(log_level=logging.INFO):
-  log_file_path = os.path.join(myenv.logdir, "main_process_trader.log")
-  '''
-    # Create a TimedRotatingFileHandler that rotates every day
-    from logging.handlers import TimedRotatingFileHandler
-    handler = TimedRotatingFileHandler(
-        filename=log_file_path,
-        when="midnight",  # Rotate at midnight
-        interval=1,        # Daily rotation
-        backupCount=7      # Keep up to 7 log files (adjust as needed)
-    )
-    '''
-  logging.basicConfig(
-      level=log_level,  # Set the minimum level to be logged
-      format="%(asctime)s [%(levelname)s]: %(message)s",
-      handlers=[
-          logging.FileHandler(log_file_path, mode='a', delay=True),  # Log messages to a file
-          logging.StreamHandler()  # Log messages to the console
-      ]
-  )
-  return logging.getLogger("main_trader_log")
 def configure_log(log_level):
   log_file_path = os.path.join(myenv.logdir, myenv.main_log_filename)
-  logger = logging.getLogger('main_trader_log')
+  logger = logging.getLogger()
   logger.setLevel(log_level)
   fh = logging.FileHandler(log_file_path, mode='a', delay=True)
   fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
   fh.setLevel(log_level)
+
+  sh = logging.StreamHandler()
+  sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+  sh.setLevel(log_level)
   logger.addHandler(fh)
-  logger.addHandler(logging.StreamHandler())
+  logger.addHandler(sh)
   return logger
 
+
 def main(args):
+  if not os.path.exists('./logs'):
+    os.makedirs('./logs')
+  myenv.telegram_key.append(utils.get_telegram_key())
+
   log_level = logging.INFO
   interval_list = ['1h']
+  start_date = '2010-01-01'
 
   # Generic Params
   for arg in args:
@@ -73,12 +62,14 @@ def main(args):
     if (arg.startswith('-interval-list=')):
       aux = arg.split('=')[1]
       interval_list = aux.split(',')
+    if (arg.startswith('-start-date=')):
+      start_date = arg.split('=')[1]
 
   log = configure_log(log_level)
   if '-download-data' in args:
     for interval in interval_list:
       log.info(f'Starting download data, in interval ({interval}) for all Symbols in database...')
-      utils.download_data(save_database=True, parse_data=False, interval=interval)
+      utils.download_data(save_database=True, parse_data=False, interval=interval, start_date=start_date)
     sys.exit(0)
 
   if '-prepare-best-parameters' in args:

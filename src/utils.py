@@ -20,6 +20,58 @@ import glob
 log = logging.getLogger()
 
 
+def get_account_balance():
+  filename = f'{myenv.datadir}/account_balance.dat'
+  if os.path.exists(filename):
+    data = pd.read_csv(filename, sep=';')
+    data.sort_values('operation_date', inplace=True)
+    return data.tail(1).to_dict(orient='records')[0]
+
+
+def register_account_balance(balance):
+  filename = f'{myenv.datadir}/account_balance.dat'
+  params = {}
+  params['operation_date'] = int(datetime.datetime.now().timestamp() * 1000)
+  params['balance'] = balance
+  data = pd.DataFrame(data=[params], index=[0])
+  if os.path.exists(filename):
+    base = pd.read_csv(filename, sep=';')
+    data = pd.concat([base, data], ignore_index=True)
+    data.sort_values('operation_date', inplace=True)
+  data.to_csv(filename, sep=';', index=False)
+
+
+def register_operation(params):
+  filename = f'{myenv.datadir}/ledger.dat'
+  data = pd.DataFrame(data=params)
+  if os.path.exists(filename):
+    base = pd.read_csv(filename, sep=';')
+    data = pd.concat([base, data], ignore_index=True)
+    data.sort_values('operation_date', inplace=True)
+  data.to_csv(filename, sep=';', index=False)
+
+
+def get_latest_operation(symbol, interval):
+  filename = f'{myenv.datadir}/ledger.dat'
+  if os.path.exists(filename):
+    data = pd.read_csv(filename, sep=';')
+    if data.shape[0] > 0:
+      data.sort_values('operation_date', inplace=True)
+      data = data[(data['symbol'] == symbol) & (data['interval'] == interval)]
+      if data.shape[0] > 0:
+        return data.tail(1).to_dict(orient='records')[0]
+
+  return []
+
+
+def get_telegram_key():
+  with open(f'{sys.path[0]}/telegram.key', 'r') as file:
+    first_line = file.readline()
+    if not first_line:
+      raise Exception('telegram.key is empty')
+  return first_line
+
+
 def prepare_best_params():
   file_list = glob.glob(os.path.join(f'{myenv.datadir}/', 'resultado_simulacao_*.csv'))
   df_top_params = pd.DataFrame()
@@ -438,6 +490,7 @@ def plot_predic_model(predict_data, validation_data, estimator):
 
 def get_model_name_to_load(
         symbol,
+        interval='1h',
         estimator=myenv.estimator,
         stop_loss=myenv.stop_loss,
         regression_times=myenv.regression_times,
@@ -447,7 +500,7 @@ def get_model_name_to_load(
   '''
   model_name = None
   for i in range(9999, 0, -1):
-    model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
+    model_name = f'{symbol}_{interval}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
     if os.path.exists(f'{model_name}.pkl'):
       break
   return model_name
@@ -455,6 +508,7 @@ def get_model_name_to_load(
 
 def get_model_name_to_save(
         symbol,
+        interval,
         estimator='xgboost',
         stop_loss=myenv.stop_loss,
         regression_times=myenv.regression_times,
@@ -462,7 +516,7 @@ def get_model_name_to_save(
 
   model_name = None
   for i in range(1, 9999):
-    model_name = f'{symbol}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
+    model_name = f'{symbol}_{interval}_{estimator}_SL_{stop_loss}_RT_{regression_times}_RPL_{times_regression_profit_and_loss}_{i}'
     if os.path.exists(f'{model_name}.pkl'):
       continue
     else:
@@ -472,6 +526,7 @@ def get_model_name_to_save(
 
 def save_model(
         symbol,
+        interval,
         model,
         experiment,
         estimator='xgboost',
@@ -479,15 +534,15 @@ def save_model(
         regression_times=myenv.regression_times,
         times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
 
-  model_name = get_model_name_to_save(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
+  model_name = get_model_name_to_save(symbol, interval, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
   log.info(f'save_model: Model file name: {model_name}')
   experiment.save_model(model, model_name)
   return model_name
 
 
-def load_model(symbol, estimator=myenv.estimator, stop_loss=myenv.stop_loss, regression_times=myenv.regression_times, times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
+def load_model(symbol, interval, estimator=myenv.estimator, stop_loss=myenv.stop_loss, regression_times=myenv.regression_times, times_regression_profit_and_loss=myenv.times_regression_profit_and_loss):
   ca = ClassificationExperiment()
-  model_name = get_model_name_to_load(symbol, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
+  model_name = get_model_name_to_load(symbol, interval, estimator, stop_loss, regression_times, times_regression_profit_and_loss)
   log.info(f'load_model: Loading model: {model_name}')
   model = ca.load_model(model_name, verbose=False)
   log.info(f'load_model: Model obj: {model}')
@@ -525,8 +580,8 @@ def regresstion_times(df_database, regression_features=['close'], regression_tim
   return df_database, features_added
 
 
-def get_max_date(df_database):
-  max_date = datetime.datetime.strptime('2010-01-01', '%Y-%m-%d')
+def get_max_date(df_database, start_date='2010-01-01'):
+  max_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
   if df_database is not None and df_database.shape[0] > 0:
     max_date = pd.to_datetime(df_database['open_time'].max(), unit='ms')
   return max_date
@@ -557,10 +612,10 @@ def get_database_name(symbol, interval):
   return f'{datadir}/{symbol}/{symbol}_{interval}.dat'
 
 
-def download_data(save_database=True, parse_data=False, interval='1h'):
+def download_data(save_database=True, parse_data=False, interval='1h', start_date='2010-01-01'):
   symbols = pd.read_csv(datadir + '/symbol_list.csv')
   for symbol in symbols['symbol']:
-    get_data(symbol=symbol, save_database=save_database, interval=interval, columns=myenv.all_klines_cols, parse_data=parse_data)
+    get_data(symbol=symbol, save_database=save_database, interval=interval, columns=myenv.all_klines_cols, parse_data=parse_data, start_date=start_date)
 
 
 def adjust_index(df):
@@ -618,11 +673,12 @@ def parse_type_fields(df, parse_dates=False):
   return df
 
 
-def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open_time', 'close'], parse_data=True, updata_data_from_web=True):
+def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open_time', 'close'], parse_data=True, updata_data_from_web=True, start_date='2010-01-01'):
   database_name = get_database_name(symbol, interval)
+  log.info(f'get_data: Loading database: {database_name}')
   df_database = get_database(symbol=symbol, interval=interval, tail=tail, columns=columns, parse_data=parse_data)
 
-  max_date = get_max_date(df_database)
+  max_date = get_max_date(df_database, start_date=start_date)
   max_date_aux = ''
   new_data = False
   if updata_data_from_web:
@@ -630,7 +686,7 @@ def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open
     while (max_date != max_date_aux):
       new_data = True
       log.info(f'get_data: max_date: {max_date} - max_date_aux: {max_date_aux}')
-      max_date_aux = get_max_date(df_database)
+      max_date_aux = get_max_date(df_database, start_date=start_date)
       log.info(f'get_data: Max date database: {max_date_aux}')
 
       df_klines = get_klines(symbol, interval=interval, max_date=max_date_aux.strftime('%Y-%m-%d'), columns=columns, parse_data=parse_data)
@@ -639,8 +695,9 @@ def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open
       df_database.sort_index(inplace=True)
       df_database['symbol'] = symbol
       max_date = get_max_date(df_database)
-      sulfix_name = f'{symbol}_{interval}.csv'
+
   if save_database and new_data:
+    sulfix_name = f'{symbol}_{interval}.dat'
     if not os.path.exists(database_name.removesuffix(sulfix_name)):
       os.makedirs(database_name.removesuffix(sulfix_name))
     df_database.to_csv(database_name, sep=';', index=False, compression=dict(method='zip'))
@@ -749,7 +806,7 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
     if (operacao.startswith('SOBE') or operacao.startswith('CAI')) and not comprado:
       operacao_compra = operacao
       valor_compra = _data.iloc[row_nu:row_nu + 1]['close'].values[0]
-      log.info(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra:.4f}')
+      log.debug(f'[{row_nu}][{operacao_compra}][{open_time}] => Compra: {valor_compra:.4f}')
       comprado = True
 
     if comprado:
@@ -775,7 +832,7 @@ def simule_trading_crypto(df_predicted: pd.DataFrame, start_date, end_date, valu
   if operacao_compra == '':
     log.info('Nenhuma operação de Compra e Venda foi realizada!')
 
-  log.info(f'Saldo: {saldo}')
+  log.info(f'>>>Saldo: {saldo}')
   return saldo
 
 

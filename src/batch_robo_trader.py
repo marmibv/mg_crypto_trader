@@ -112,6 +112,7 @@ class BatchRoboTrader:
     for params in params_list:
       model_name = utils.get_model_name_to_load(
           symbol=params['symbol'],
+          interval=params['interval'],
           estimator=params['estimator'],
           stop_loss=params['stop_loss'],
           regression_times=params['regression_times'],
@@ -124,6 +125,7 @@ class BatchRoboTrader:
       # print(params['symbol'], params['estimator'], params['stop_loss'], params['regression_times'], params['times_regression_profit_and_loss'])
       model_name = utils.get_model_name_to_load(
           symbol=params['symbol'],
+          interval=params['interval'],
           estimator=params['estimator'],
           stop_loss=params['stop_loss'],
           regression_times=params['regression_times'],
@@ -131,7 +133,5 @@ class BatchRoboTrader:
       )
 
       self.log.info(f'Starting Robo Trader for model: {model_name}')
-      print(params)
       robo = RoboTrader(params)
-      # robo.run()
       threading.Thread(target=robo.run).start()

@@ -170,6 +170,7 @@ class Train:
     if self._save_model:
       utils.save_model(
           self._symbol,
+          self._interval,
           self._final_model,
           self._experiement,
           self._estimator,
@@ -178,6 +179,7 @@ class Train:
           self._times_regression_profit_and_loss)
       model_name = utils.get_model_name_to_load(
           self._symbol,
+          self._interval,
           self._estimator,
           self._stop_loss,
           self._regression_times,

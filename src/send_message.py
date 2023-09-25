@@ -5,7 +5,7 @@ import logging
 
 
 def send_to_telegram(message):
-  apiToken = 'XXXXX'
+  apiToken = myenv.telegram_key[0]
   chatID = '@mgcryptotrader'
   apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
 
@@ -23,7 +23,7 @@ def send_to_telegram(message):
 
 
 def send_status_to_telegram(message):
-  apiToken = '5946293152:AAEIR1M3K_hriLGW3DkxWTI_5uaAV-4oNbU'
+  apiToken = myenv.telegram_key[0]
   chatID = '@statusmgcrypto'
   apiURL = f'https://api.telegram.org/bot{apiToken}/sendMessage'
 

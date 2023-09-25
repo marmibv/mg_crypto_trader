@@ -37,3 +37,5 @@ saldo_inicial = 100
 sleep_refresh = 2  # seconds
 
 producao = True
+
+telegram_key = []
