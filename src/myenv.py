@@ -34,7 +34,7 @@ estimator = 'xgboost'
 symbol = 'BTCUSDT'
 saldo_inicial = 100
 
-sleep_refresh = 2  # seconds
+sleep_refresh = 3  # seconds
 
 producao = True
 

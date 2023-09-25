@@ -97,7 +97,7 @@ class RoboTrader():
     self._load_model()
 
     cont = 0
-    cont_aviso = 0
+    cont_aviso = 101
     operation = ''
     purchase_operation = ''
     purchased = False
@@ -119,14 +119,14 @@ class RoboTrader():
       take_profit = float(params_operation['take_profit'])
       stop_loss = float(params_operation['stop_loss'])
       purchase_operation = params_operation['status']
-      open_time = pd.to_datetime(params_operation["operation_date"], unit='ms')
+      open_time = pd.to_datetime(params_operation["operation_date"], unit='ms').strftime('%Y-%m-%d %H:%M:%S')
       amount_invested = float(params_operation['amount_invested'])
       rsi = float(params_operation['rsi'])
-      msg = f'Compra: Symbol: {self._symbol} - open_time: {open_time.strftime("%Y-%m-%d %H:%M:%S")} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-  RSI: {rsi:.2f} - PnL: $ {amount_invested:.2f} - Balance: {balance:.2f}'
+      msg = f'Compra: Symbol: {self._symbol}_{self._interval} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: $ {purchase_price:.6f} - \
+  RSI: {rsi:.2f} - Valor Investido: $ {amount_invested:.2f} - Balance: $ {balance:.2f}'
       sm.send_to_telegram(msg)
-      print("************ COMPRADO ************")
-      #sys.exit(0)
+      self.log.info(f'{self._symbol}_{self._interval}: Reiniciando >> COMPRADO <<')
+
     self.log.info(f'{self.pl}: starting loop monitoring...')
     self._all_data.info() if self._verbose else None
     latest_time = None
@@ -134,23 +134,12 @@ class RoboTrader():
       self.log.info(f'------------------------>>')
       self.log.info(f'{self.pl}: Loop  -->  Symbol: {self._symbol} - Cont: {cont} - Now: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
       try:
-        model_name = utils.get_model_name_to_load(
-            self._symbol,
-            self._interval,
-            self._estimator,
-            self._stop_loss,
-            self._regression_times,
-            self._times_regression_profit_and_loss)
+        model_name = utils.get_model_name_to_load(self._symbol, self._interval, self._estimator, self._stop_loss, self._regression_times,
+                                                  self._times_regression_profit_and_loss)
 
         if model_name != self._model_name_init:
-          self._experiment, self._model = utils.load_model(
-              self._symbol,
-              self._interval,
-              self._estimator,
-              self._stop_loss,
-              self._regression_times,
-              self._times_regression_profit_and_loss)  # cassification_experiment
-
+          self._experiment, self._model = utils.load_model(self._symbol, self._interval, self._estimator, self._stop_loss, self._regression_times,
+                                                           self._times_regression_profit_and_loss)
           self._model_name_init = model_name
           sm.send_status_to_telegram(f'{self.pl}: reload new model. New model name: {model_name} - Old model name: {self._model_name_init}')
 
@@ -158,27 +147,67 @@ class RoboTrader():
         open_time = self._all_data.tail(1)["open_time"].dt.strftime('%Y-%m-%d %H:%M:%S').values[0]
         self.log.info(f'{self.pl}: max_date: {max_date}')
 
-        df_klines = utils.get_klines(symbol=self._symbol, max_date=None, limit=2, columns=list(self._all_data.columns).copy())
-        df_klines = df_klines.iloc[0:1]
+        df_klines = utils.get_klines(symbol=self._symbol, max_date=None, limit=3, columns=list(self._all_data.columns).copy())
         df_klines['symbol'] = self._symbol
+        df_klines.info() if self._verbose else None
 
-        now_price = df_klines['close'].values[0] 
+        self._all_data = pd.concat([self._all_data, df_klines])
+        self.log.debug(f'{self.pl}: Data updated from klines. all_data.shape: {self._all_data.shape}')
+
+        self._all_data.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
+        self.log.debug(f'{self.pl}: Drop duplicates. all_data.shape: {self._all_data.shape}')
+
+        self._all_data.sort_index(inplace=True)
+        self.log.debug(f'{self.pl}: Sort Index. all_data.shape: {self._all_data.shape}')
+        self.log.info(f'{self.pl}: Updated data - all_data.shape: {self._all_data.shape}')
+
+        now_price = df_klines.tail(1)['close'].values[0]
         self.log.info(f'{self.pl} - Now Price: {now_price}')
-        aux_open_time = df_klines['open_time'].values[0]
-        if aux_open_time != latest_time:
+
+        # Sell operation
+        if purchased:
+          diff = 100 * (now_price - purchase_price) / purchase_price
+          profit_and_loss = 0.0
+          if purchase_operation.startswith('SOBE'):
+            profit_and_loss += amount_invested * (diff / 100)
+          else:
+            profit_and_loss += amount_invested * (-diff / 100)
+
+        if (abs(diff) >= self._stop_loss) and purchased:
+          balance += profit_and_loss
+          params_operation = {'operation_date': int(datetime.datetime.now().timestamp() * 1000),
+                              'symbol': self._symbol,
+                              'interval': self._interval,
+                              'operation': 'SELL',
+                              'amount_invested': f'{amount_invested:.2f}',
+                              'balance': f'{balance:.2f}',
+                              'take_profit': f'{take_profit:.6f}',
+                              'stop_loss': f'{stop_loss:.6f}',
+                              'purchase_price': f'{purchase_price:.6f}',
+                              'sell_price': f'{now_price:.6f}',
+                              'PnL': f'{(amount_invested - profit_and_loss):.2f}',
+                              'rsi': f'{rsi:.2f}',
+                              'status': operation,
+                              }
+
+          utils.register_operation(params_operation)
+          utils.register_account_balance(balance)
+
+          msg = f'Venda: Symbol: {self._symbol}_{self._interval} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: $ {purchase_price:.6f} - \
+Valor Venda: $ {now_price:.6f} - Variação: $ {diff:.6f}% - PnL: $ {(amount_invested-profit_and_loss):.2f} - Balance: $ {balance:.2f}'
+          sm.send_to_telegram(msg)
+          # Reset variaveis
+          purchased = False
+          purchase_price = 0.0
+          purchase_operation = ''
+          amount_invested = 0.0
+        # End Sell Calcs
+
+        # Start Buy Calcs
+        # aux_open_time = df_klines.iloc[0:1]['open_time'].values[0]
+        aux_open_time = df_klines.iloc[df_klines.shape[0] - 2:df_klines.shape[0] - 1]['open_time'].values[0]
+        if (aux_open_time != latest_time) and not purchased:
           latest_time = aux_open_time
-          df_klines.info() if self._verbose else None
-
-          self._all_data = pd.concat([self._all_data, df_klines])
-          self.log.debug(f'{self.pl}: Data updated from klines. all_data.shape: {self._all_data.shape}')
-
-          self._all_data.drop_duplicates(keep='last', subset=['open_time'], inplace=True)
-          self.log.debug(f'{self.pl}: Drop duplicates. all_data.shape: {self._all_data.shape}')
-
-          self._all_data.sort_index(inplace=True)
-          self.log.debug(f'{self.pl}: Sort Index. all_data.shape: {self._all_data.shape}')
-
-          self.log.info(f'{self.pl}: Updated data - all_data.shape: {self._all_data.shape}')
 
           if self._calc_rsi:
             self.log.info(f'{self.pl}: Start Calculating RSI...')
@@ -189,96 +218,50 @@ class RoboTrader():
           if (self._regression_times is not None) and (self._regression_times > 0):
             self._all_data, _ = utils.regresstion_times(self._all_data, self._numeric_features, self._regression_times, last_one=True)
 
-          # Calculo compra e venda
-          now_price = self._all_data.tail(1)["close"].values[0]
-          self.log.info(f'{self.pl}: valor_atual: >> $ {now_price:.4f} <<')
+          self.log.info(f'{self.pl}: start predict_model...')
+          df_predict = self._experiment.predict_model(self._model, self._all_data.tail(1), verbose=self._verbose)
 
-          if purchased:
-            diff = 100 * (now_price - purchase_price) / purchase_price
+          operation = df_predict['prediction_label'].values[0]
+          self.log.info(f'{self.pl}: operacao predita: {operation}')
+          # Apply BUY
+          if (operation.startswith('SOBE') or operation.startswith('CAI')):
+            account_balance = utils.get_account_balance()
+            balance = account_balance['balance']
+            if balance >= 100:
+              amount_invested = 100
+            elif balance > 0 and balance < 100:
+              amount_invested = balance
+            balance -= amount_invested
 
-          # Sell operation
-          if (abs(diff) >= self._stop_loss) and purchased:
-            profit_and_loss = 0.0
-            if purchase_operation.startswith('SOBE'):
-              profit_and_loss += amount_invested * (diff / 100)
-            else:
-              profit_and_loss += amount_invested * (-diff / 100)
-            balance += profit_and_loss
+            purchased = True
+            purchase_operation = operation
+            purchase_price = now_price
+            rsi = df_predict.tail(1)["rsi"].values[0]
+            margin = float(operation.split('_')[1])
+            take_profit = now_price * (1 + margin)
+            stop_loss = now_price * (1 - (2 * margin))
 
             params_operation = {'operation_date': int(datetime.datetime.now().timestamp() * 1000),
                                 'symbol': self._symbol,
                                 'interval': self._interval,
-                                'operation': 'SELL',
-                                'amount_invested': amount_invested,
-                                'balance': balance,
-                                'take_profit': take_profit,
-                                'stop_loss': stop_loss,
-                                'purchase_price': purchase_price,
-                                'sell_price': now_price,
-                                'PnL': profit_and_loss - amount_invested,
-                                'rsi': rsi,
+                                'operation': 'BUY',
+                                'amount_invested': f'{amount_invested:.2f}',
+                                'balance': f'{balance:.2f}',
+                                'take_profit': f'{take_profit:.6f}',
+                                'stop_loss': f'{stop_loss:.6f}',
+                                'purchase_price': f'{purchase_price:.6f}',
+                                'sell_price': 0.0,
+                                'PnL': 0,
+                                'rsi': f'{rsi:.2f}',
                                 'status': operation,
                                 }
             utils.register_operation(params_operation)
             utils.register_account_balance(balance)
 
-            msg = f'Venda: Symbol: {self._symbol} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-Valor Venda: {now_price:.4f} - Variação: {diff:.4f}% - PnL: $ {amount_invested:.2f} - Balance: {balance:.2f}'
+            msg = f'Compra: Symbol: {self._symbol}_{self._interval} - open_time: {open_time} - Operação: $ {purchase_operation} - Valor Comprado: $ {purchase_price:.6f} - \
+RSI: {rsi:.2f} - Valor Investido: $ {amount_invested:.2f} - Balance: $ {balance:.2f}'
             sm.send_to_telegram(msg)
-            # Reset variaveis
-            purchased = False
-            purchase_price = 0.0
-            purchase_operation = ''
-            amount_invested = 0.0
-          # End Sell Cals
-
-          self._all_data.info() if self._verbose else None
-          self.log.debug(f'{self.pl}: tail(1):\n {self._all_data.tail(1)}')
-          if not purchased:
-            self.log.info(f'{self.pl}: start predict_model...')
-            df_predict = self._experiment.predict_model(self._model, self._all_data.tail(1), verbose=self._verbose)
-            # Inicio calculo compra
-            operation = df_predict['prediction_label'].values[0]
-            self.log.info(f'{self.pl}: operacao predita: {operation}')
-            if (operation.startswith('SOBE') or operation.startswith('CAI')):
-              account_balance = utils.get_account_balance()
-              balance = account_balance['balance']
-              if balance >= 100:
-                amount_invested = 100
-              elif balance > 0 and balance < 100:
-                amount_invested = balance
-              balance -= amount_invested
-
-              purchased = True
-              purchase_operation = operation
-              purchase_price = now_price
-              rsi = df_predict.tail(1)["rsi"].values[0]
-              margin = float(operation.split('_')[1])
-              take_profit = now_price * (1 + margin),
-              stop_loss = now_price * (1 - (2 * margin))
-
-              params_operation = {'operation_date': int(datetime.datetime.now().timestamp() * 1000),
-                                  'symbol': self._symbol,
-                                  'interval': self._interval,
-                                  'operation': 'BUY',
-                                  'amount_invested': amount_invested,
-                                  'balance': balance,
-                                  'take_profit': take_profit,
-                                  'stop_loss': stop_loss,
-                                  'purchase_price': purchase_price,
-                                  'sell_price': 0.0,
-                                  'PnL': 0,
-                                  'rsi': rsi,
-                                  'status': operation,
-                                  }
-              utils.register_operation(params_operation)
-              utils.register_account_balance(balance)
-
-              msg = f'Compra: Symbol: {self._symbol} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-  RSI: {rsi:.2f} - PnL: $ {amount_invested:.2f} - Balance: {balance}'
-              sm.send_to_telegram(msg)
-
-            # Fim calculo compra
+          # Fim calculo compra
       except Exception as e:
         self.log.error(e)
         self.log.exception(e)
@@ -290,9 +273,8 @@ Valor Venda: {now_price:.4f} - Variação: {diff:.4f}% - PnL: $ {amount_invested
         if cont_aviso > 100:
           cont_aviso = 0
           if purchased:
-            msg = f'*COMPRADO*: Symbol: {self._symbol} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: {purchase_price:.4f} - \
-Valor Atual: {now_price:.4f} - Variação: {diff:.4f}% - PnL: $ {amount_invested:.2f} - Balance: {balance:.2f}'
-            sm.send_status_to_telegram(msg)
+            msg = f'*COMPRADO*: Symbol: {self._symbol}_{self._interval} - open_time: {open_time} - Operação: {purchase_operation} - Valor Comprado: $ {purchase_price:.6f} - \
+Valor Atual: $ {now_price:.6f} - Variação: {diff:.6f}% - Valor Investido: $ {amount_invested:.2f} - PnL: $ {(amount_invested - profit_and_loss):.2f} - Balance: $ {balance:.2f}'
           else:
-            msg = f'*NÃO COMPRADO*: Symbol: {self._symbol} - open_time: {open_time} - Valor Atual: {now_price:.4f} - Balance: {balance:.2f}'
-            sm.send_status_to_telegram(msg)
+            msg = f'*NÃO COMPRADO*: Symbol: {self._symbol}_{self._interval} - open_time: {open_time} - Valor Atual: $ {now_price:.6f} - Balance: $ {balance:.2f}'
+          sm.send_status_to_telegram(msg)
