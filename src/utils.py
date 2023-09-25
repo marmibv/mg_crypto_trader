@@ -43,7 +43,7 @@ def register_account_balance(balance):
 
 def register_operation(params):
   filename = f'{myenv.datadir}/ledger.dat'
-  data = pd.DataFrame(data=params)
+  data = pd.DataFrame(data=[params], index=[0])
   if os.path.exists(filename):
     base = pd.read_csv(filename, sep=';')
     data = pd.concat([base, data], ignore_index=True)
