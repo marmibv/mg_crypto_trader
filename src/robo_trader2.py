@@ -187,7 +187,7 @@ class RoboTrader():
     msg += f'- Actual Price: $ {actual_price:.6f} - Margin: {margin:.2f}% - Amount invested: $ {amount_invested:.2f} - PnL: $ {profit_and_loss:.2f}'
     msg += f'- Take Profit: $ {take_profit_price:.6f} - Stop Loss: $ {stop_loss_price:.6f} - Balance: $ {balance:.2f}'
     self.log.info(f'{msg}')
-    sm.send_status_to_telegram(msg)
+    sm.send_to_telegram(msg)
 
   def predict_operation(self):
     operation, margin = '', 0.0
