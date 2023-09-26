@@ -36,29 +36,6 @@ class BatchTrain:
                times_regression_PnL_list,
                regression_times_list,
                regression_features_list):
-    """
-    Parameters:
-    update_data_from_web: a boolean indicating whether to update the data from web.        
-    calc_rsi: a boolean indicating whether to calculate the RSI.
-    use_gpu: a boolean indicating whether to use GPU for training.
-    normalize: a boolean indicating whether to normalize the data.
-    verbose: a boolean indicating whether to print verbose output.
-    use_all_data_to_train: a boolean indicating whether to use all available data for training.
-    revert: a boolean indicating whether to revert the data.
-    no_tune: a boolean indicating whether to skip hyperparameter tuning.
-    start_train_date: a string representing the start date for training.
-    start_test_date: a string representing the start date for testing.
-    fold: an integer representing the number of folds for cross-validation.
-    n_jobs: an integer representing the number of jobs to run in parallel.
-    symbol_list: a list of symbols to train on.
-    interval_list: a list of intervals to train on.
-    estimator_list: a list of regression models to use.
-    stop_loss_list: a list of stop loss values for evaluation.
-    numeric_features_list: a list of numeric features.
-    times_regression_PnL_list: a list of times for regression profit and loss.
-    regression_times_list: a list of regression times.
-    regression_features_list: a list of regression features.
-    """
 
     # Boolean arguments
     self._update_data_from_web = update_data_from_web
@@ -111,7 +88,8 @@ class BatchTrain:
             tail=-1,
             columns=myenv.all_cols,
             parse_data=True,
-            updata_data_from_web=self._update_data_from_web)
+            updata_data_from_web=self._update_data_from_web,
+            start_date=self._start_train_date)
 
         try:
           self.log.info(f'{self.pl}: Calculating RSI for symbol: {symbol}_{interval}...')
@@ -173,7 +151,7 @@ class BatchTrain:
           for stop_loss in self._stop_loss_list:
             for times_regression_PnL in self._times_regression_PnL_list:
               for nf_list in self._numeric_features_list:  # Numeric Features
-                #nf_list += ',rsi' if self._calc_rsi else None
+                # nf_list += ',rsi' if self._calc_rsi else None
                 for rt_list in self._regression_times_list:
                   ix_symbol = self.get_ix_symbol(symbol, interval, stop_loss, times_regression_PnL)
                   if rt_list != '0':
