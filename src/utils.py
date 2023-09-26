@@ -695,8 +695,9 @@ def get_data(symbol, save_database=False, interval='1h', tail=-1, columns=['open
   log.info(f'get_data: Loading database: {database_name}')
   df_database = get_database(symbol=symbol, interval=interval, tail=tail, columns=columns, parse_data=parse_data)
   log.info(f'Filtering start date: {start_date}')
-  df_database = df_database[df_database['open_time'] >= start_date]
-  log.info(f'New shape after filtering start date. Shape: {df_database.shape}')
+  if parse_data:
+    df_database = df_database[df_database['open_time'] >= start_date]
+    log.info(f'New shape after filtering start date. Shape: {df_database.shape}')
 
   max_date = get_max_date(df_database, start_date=start_date)
   max_date_aux = ''
