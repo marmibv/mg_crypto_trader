@@ -17,6 +17,7 @@ logger = None
 def configure_log(log_level):
   log_file_path = os.path.join(myenv.logdir, myenv.train_log_filename)
   logger = logging.getLogger('training_logger')
+  logger.propagate = False
   logger.setLevel(log_level)
 
   fh = logging.FileHandler(log_file_path, mode='a', delay=True)

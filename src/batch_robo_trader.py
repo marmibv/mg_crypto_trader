@@ -32,10 +32,11 @@ class BatchRoboTrader:
   def _configure_log(self, log_level):
     log_file_path = os.path.join(myenv.logdir, myenv.batch_robo_log_filename)
     logger = logging.getLogger("batch_robo_logger")
+    logger.propagate = False
     logger.setLevel(log_level)
 
     fh = logging.FileHandler(log_file_path, mode='a', delay=True)
-    fh.setFormatter(logging.Formatter('[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+    fh.setFormatter(logging.Formatter(f'[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
     fh.setLevel(log_level)
 
     sh = logging.StreamHandler()

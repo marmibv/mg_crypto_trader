@@ -27,6 +27,8 @@ log = None
 def configure_log(log_level):
   log_file_path = os.path.join(myenv.logdir, myenv.main_log_filename)
   logger = logging.getLogger()
+  logger.propagate = False
+
   logger.setLevel(log_level)
   fh = logging.FileHandler(log_file_path, mode='a', delay=True)
   fh.setFormatter(logging.Formatter('[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))

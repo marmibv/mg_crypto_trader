@@ -3,6 +3,7 @@ from src.batch_robo_trader import BatchRoboTrader
 from src.utils import *
 from src.train import *
 
+
 def main(args):
   # Boolean arguments
   verbose = False
@@ -19,7 +20,7 @@ def main(args):
     # Single arguments
     if (arg.startswith('-start-date=')):
       start_date = arg.split('=')[1]
-      
+
     if (arg.startswith('-log-level=DEBUG')):
       log_level = logging.DEBUG
 
