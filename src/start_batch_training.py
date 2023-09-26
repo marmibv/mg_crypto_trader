@@ -18,11 +18,17 @@ def configure_log(log_level):
   log_file_path = os.path.join(myenv.logdir, myenv.train_log_filename)
   logger = logging.getLogger('training_logger')
   logger.setLevel(log_level)
+
   fh = logging.FileHandler(log_file_path, mode='a', delay=True)
-  fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+  fh.setFormatter(logging.Formatter(f'[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
   fh.setLevel(log_level)
+
+  sh = logging.StreamHandler()
+  sh.setFormatter(logging.Formatter(f'[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+  sh.setLevel(log_level)
+
   logger.addHandler(fh)
-  logger.addHandler(logging.StreamHandler())
+  logger.addHandler(sh)
   return logger
 
 

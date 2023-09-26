@@ -64,6 +64,23 @@ def get_latest_operation(symbol, interval):
   return []
 
 
+def get_params_operation(symbol, interval, buy_or_sell, amount_invested, balance, take_profit, stop_loss, purchase_price, sell_price, profit_and_loss, rsi, operation):
+  params_operation = {'operation_date': int(datetime.datetime.now().timestamp() * 1000),
+                      'symbol': symbol,
+                      'interval': interval,
+                      'operation': buy_or_sell,
+                      'amount_invested': f'{amount_invested:.2f}',
+                      'balance': f'{balance:.2f}',
+                      'take_profit': f'{take_profit:.6f}',
+                      'stop_loss': f'{stop_loss:.6f}',
+                      'purchase_price': f'{purchase_price:.6f}',
+                      'sell_price': f'{sell_price:.6f}',
+                      'PnL': f'{profit_and_loss:.6f}',
+                      'rsi': f'{rsi:.2f}',
+                      'status': operation}
+  return params_operation
+
+
 def get_telegram_key():
   with open(f'{sys.path[0]}/telegram.key', 'r') as file:
     first_line = file.readline()

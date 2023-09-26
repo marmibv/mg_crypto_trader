@@ -1,4 +1,4 @@
-from src.robo_trader import RoboTrader
+from src.robo_trader2 import RoboTrader
 from src.trainig import Train
 
 import src.utils as utils
@@ -31,15 +31,20 @@ class BatchRoboTrader:
 
   def _configure_log(self, log_level):
     log_file_path = os.path.join(myenv.logdir, myenv.batch_robo_log_filename)
-    logging.basicConfig(
-        level=log_level,  # Set the minimum level to be logged
-        format="%(asctime)s [%(levelname)s]: %(message)s",
-        handlers=[
-            logging.FileHandler(log_file_path, mode='a', delay=True),  # Log messages to a file
-            logging.StreamHandler()  # Log messages to the console
-        ]
-    )
-    return logging.getLogger("batch_robo_logger")
+    logger = logging.getLogger("batch_robo_logger")
+    logger.setLevel(log_level)
+
+    fh = logging.FileHandler(log_file_path, mode='a', delay=True)
+    fh.setFormatter(logging.Formatter('[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+    fh.setLevel(log_level)
+
+    sh = logging.StreamHandler()
+    sh.setFormatter(logging.Formatter(f'[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+    sh.setLevel(log_level)
+
+    logger.addHandler(fh)
+    logger.addHandler(sh)
+    return logger
 
   def _data_collection(self):
     self.log.info(f'Loading data to memory: Symbols: {[s["symbol"] for s in self._top_params]} - Intervals: {[s["interval"] for s in self._top_params]}')

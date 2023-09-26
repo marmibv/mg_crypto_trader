@@ -1,4 +1,3 @@
-from src.robo_trader import RoboTrader
 from src.trainig import Train
 
 import src.utils as utils

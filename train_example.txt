@@ -2,7 +2,8 @@
 python . -download-data -interval-list=1h,5m -log-level=DEBUG -verbose
 
 # 1o - Train all combinations variables
-python . -batch-training -calc-rsi -normalize -no-tune -n-jobs=20 -symbol-list=BTCUSDT,ETHUSDT,BNBUSDT,XRPUSDT,ADAUSDT,DOGEUSDT,SOLUSDT,TRXUSDT,DOTUSDT,MATICUSDT,LTCUSDT,SHIBUSDT,WBTCUSDT,BCHUSDT,AVAXUSDT,XLMUSDT,LINKUSDT,XMRUSDT,UNIUSDT,ATOMUSDT -interval-list=1h -estimator-list=knn -stop-loss-list=1.5,2.0,2.5,3.0,3.5 -numeric-features=open,high,low,close,volume,quote_asset_volume,number_of_trades,taker_buy_base_asset_volume,taker_buy_quote_asset_volume -regression-PnL-list=6,12,24 -regression-times-list=0  -start-train-date=2010-01-01 -start-test-date=2023-06-01
+python . -batch-training -calc-rsi -normalize -no-tune -n-jobs=20 -symbol-list=BTCUSDT,ETHUSDT,BNBUSDT,XRPUSDT,ADAUSDT,DOGEUSDT,SOLUSDT,TRXUSDT,DOTUSDT,MATICUSDT,LTCUSDT,SHIBUSDT,WBTCUSDT,BCHUSDT,AVAXUSDT,XLMUSDT,LINKUSDT,XMRUSDT,UNIUSDT,ATOMUSDT -interval-list=1m,5m -estimator-list=knn -stop-loss-list=1.0 -numeric-features=volume,quote_asset_volume,number_of_trades,taker_buy_base_asset_volume,taker_buy_quote_asset_volume -regression-PnL-list=30,60,120 -regression-times-list=0  -start-train-date=2023-01-01 -start-test-date=2023-09-01
+#open,high,low,close,volume,quote_asset_volume,number_of_trades,taker_buy_base_asset_volume,taker_buy_quote_asset_volume
 
 # 2o Prepare Best Params based on results of step 1
 python . -prepare-best-parameters

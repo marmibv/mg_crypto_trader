@@ -29,14 +29,16 @@ def configure_log(log_level):
   logger = logging.getLogger()
   logger.setLevel(log_level)
   fh = logging.FileHandler(log_file_path, mode='a', delay=True)
-  fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+  fh.setFormatter(logging.Formatter('[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
   fh.setLevel(log_level)
 
   sh = logging.StreamHandler()
-  sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+  sh.setFormatter(logging.Formatter(f'[%(asctime)s] - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
   sh.setLevel(log_level)
+
   logger.addHandler(fh)
   logger.addHandler(sh)
+
   return logger
 
 
