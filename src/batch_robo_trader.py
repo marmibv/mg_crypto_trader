@@ -8,6 +8,7 @@ import logging
 import pandas as pd
 import threading
 import os
+import time
 
 
 class BatchRoboTrader:
@@ -93,51 +94,74 @@ class BatchRoboTrader:
     self._data_preprocessing()
 
     self.log.info(f'{self.__class__.__name__}: Start Running...')
-    params_list = []
-    for params in self._top_params:
-      ix_symbol = f'{params["symbol"]}_{params["interval"]}'
-      robo_trader_param = {
+    robo_trader_params_list = []
+    for robo_trader_params in self._top_params:
+      ix_symbol = f'{robo_trader_params["symbol"]}_{robo_trader_params["interval"]}'
+      robo_trader_params = {
           'all_data': self._all_data_list[ix_symbol],
-          'symbol': f'{params["symbol"]}',
-          'interval': params['interval'],
-          'estimator': params['estimator'],
+          'symbol': f'{robo_trader_params["symbol"]}',
+          'interval': robo_trader_params['interval'],
+          'estimator': robo_trader_params['estimator'],
           'start_date': self._start_date,
-          'numeric_features': params['numeric_features'],
-          'stop_loss': params['stop_loss'],
-          'regression_times': params['regression_times'],
-          'regression_features': params['regression_features'],
-          'times_regression_profit_and_loss': params['times_regression_profit_and_loss'],
-          'calc_rsi': '-calc-rsi' in params['arguments'],
+          'numeric_features': robo_trader_params['numeric_features'],
+          'stop_loss': robo_trader_params['stop_loss'],
+          'regression_times': robo_trader_params['regression_times'],
+          'regression_features': robo_trader_params['regression_features'],
+          'times_regression_profit_and_loss': robo_trader_params['times_regression_profit_and_loss'],
+          'calc_rsi': '-calc-rsi' in robo_trader_params['arguments'],
           'verbose': self._verbose,
-          'arguments': params['arguments'],
+          'arguments': robo_trader_params['arguments'],
           'log_level': self._log_level}
-      params_list.append(robo_trader_param)
+      robo_trader_params_list.append(robo_trader_params)
 
-    self.log.info(f'Total Robo Trades to start...: {len(params_list)}')
-
-    for params in params_list:
+    self.log.info(f'Total Robo Trades to start...: {len(robo_trader_params_list)}')
+    for robo_trader_params in robo_trader_params_list:
       model_name = utils.get_model_name_to_load(
-          symbol=params['symbol'],
-          interval=params['interval'],
-          estimator=params['estimator'],
-          stop_loss=params['stop_loss'],
-          regression_times=params['regression_times'],
-          times_regression_profit_and_loss=params['times_regression_profit_and_loss']
+          symbol=robo_trader_params['symbol'],
+          interval=robo_trader_params['interval'],
+          estimator=robo_trader_params['estimator'],
+          stop_loss=robo_trader_params['stop_loss'],
+          regression_times=robo_trader_params['regression_times'],
+          times_regression_profit_and_loss=robo_trader_params['times_regression_profit_and_loss']
       )
       if model_name is None:
         raise Exception(f'Best model not found: {model_name}')
 
-    for params in params_list:
+    thread_list = []
+    for robo_trader_params in robo_trader_params_list:
       # print(params['symbol'], params['estimator'], params['stop_loss'], params['regression_times'], params['times_regression_profit_and_loss'])
       model_name = utils.get_model_name_to_load(
-          symbol=params['symbol'],
-          interval=params['interval'],
-          estimator=params['estimator'],
-          stop_loss=params['stop_loss'],
-          regression_times=params['regression_times'],
-          times_regression_profit_and_loss=params['times_regression_profit_and_loss']
+          symbol=robo_trader_params['symbol'],
+          interval=robo_trader_params['interval'],
+          estimator=robo_trader_params['estimator'],
+          stop_loss=robo_trader_params['stop_loss'],
+          regression_times=robo_trader_params['regression_times'],
+          times_regression_profit_and_loss=robo_trader_params['times_regression_profit_and_loss']
       )
 
-      self.log.info(f'Starting Robo Trader for model: {model_name}')
-      robo = RoboTrader(params)
-      threading.Thread(target=robo.run).start()
+      thread_name = f'{robo_trader_params["symbol"]}_{robo_trader_params["interval"]}'
+      self.log.info(f'Starting Robo Trader for Symbol: {thread_name}')
+      robo = RoboTrader(robo_trader_params)
+      thread = threading.Thread(target=robo.run, name=thread_name)
+      thread.start()
+      thread_list.append(thread)
+
+    # Monitoring Thread Live
+    self.log.info(f'Starting Thread Monitoring...')
+    while True:
+      for thread in thread_list:
+        self.log.info(f'Thread name: {thread.name} - status: {thread.is_alive()}')
+        if not thread.is_alive():
+          thread_name = thread.name
+          self.log.info(f'Removing dead thread name: {thread_name}')
+          thread_list.remove(thread)
+          for robo_trader_params in robo_trader_params_list:
+            if f'{robo_trader_params["symbol"]}_{robo_trader_params["interval"]}' == thread_name:
+              self.log.info(f'Starting new thread for symbol: {thread_name}')
+              robo = RoboTrader(robo_trader_params)
+              new_thread = threading.Thread(target=robo.run, name=f'params["symbol"]_{robo_trader_params["interval"]}')
+              new_thread.start()
+              thread_list.append(new_thread)
+      # End Thread Validation
+      time.sleep(myenv.sleep_refresh)
+    # End While

@@ -308,7 +308,7 @@ class RoboTrader():
                         f'\nMargin Operation: {margin_operation:.2f}%\nBalance: $ {balance:.2f}')
 
           if perform_sell:  # Register Sell
-            balance += profit_and_loss
+            balance += (amount_invested + profit_and_loss)
             params_operation = utils.get_params_operation(self._symbol, self._interval, 'SELL', amount_invested, balance, take_profit_price, stop_loss_price,
                                                           purchase_price, actual_price, profit_and_loss, rsi, operation)
             utils.register_operation(params_operation)
