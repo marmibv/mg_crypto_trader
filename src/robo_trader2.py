@@ -159,7 +159,7 @@ class RoboTrader():
   def is_short(self, operation):
     return operation.startswith('CAI')
 
-  def get_amoung_invested(self):
+  def get_amount_to_invest(self, register=True):
     account_balance = utils.get_account_balance()
     balance = account_balance['balance']
     amount_invested = 0.0
@@ -168,10 +168,15 @@ class RoboTrader():
       amount_invested = myenv.default_amount_invested
     elif balance > 0 and balance < myenv.default_amount_invested:
       amount_invested = balance
-
     balance -= amount_invested
+    if register:
+      utils.register_account_balance(balance)
 
     return amount_invested, balance
+
+  def get_account_balance(self):
+    account_balance = utils.get_account_balance()
+    return account_balance['balance']
 
   def log_info(self, purchased, open_time, operation, purchase_price, actual_price, margin, amount_invested, profit_and_loss, balance, take_profit_price,
                stop_loss_price, margin_operation):
@@ -247,7 +252,7 @@ class RoboTrader():
     rsi = 0.0
     latest_closed_candle_open_time_aux = None
 
-    _, balance = self.get_amoung_invested()
+    balance = self.get_account_balance()
 
     params_operation = utils.get_latest_operation(self._symbol, self._interval)
     if len(params_operation) > 0 and params_operation['operation'] == 'BUY':
@@ -266,7 +271,7 @@ class RoboTrader():
       try:
         error = False
         # Update data
-        _, balance = self.get_amoung_invested()
+        balance = self.get_account_balance()
         actual_price, latest_closed_candle_open_time = self.update_data_from_web()
 
         # Apply predict only on time per interval
@@ -276,19 +281,19 @@ class RoboTrader():
           operation, margin_operation = self.predict_operation()
 
           if self.validate_short_or_long(operation):  # If true, BUY
+            amount_invested, balance = self.get_amount_to_invest(register=True)
             purchased = True
             purchase_price = actual_price
             take_profit_price, stop_loss_price = self.calc_sl_pnl(operation, purchase_price, margin_operation)
-            amount_invested, balance = self.get_amoung_invested()
             params_operation = utils.get_params_operation(self._symbol, self._interval, 'BUY', amount_invested, balance, take_profit_price, stop_loss_price,
                                                           purchase_price, 0.0, 0.0, rsi, operation)
             utils.register_operation(params_operation)
-            utils.register_account_balance(balance)
             self.log_buy(latest_closed_candle_open_time, operation, purchase_price, amount_invested, balance, margin_operation, take_profit_price, stop_loss_price)
             self.log.info(f'\nOperation: {operation} - Perform BUY: {self.validate_short_or_long(operation)}' +
                           f'\nActual Price: $ {actual_price:.6f}\nPurchased Price: $ {purchase_price:.6f}\nAmount Invested: $ {amount_invested:.2f}' +
                           f'\nTake Profit: $ {take_profit_price:.6f}\nStop Loss: $ {stop_loss_price:.6f}\nPnL: $ {profit_and_loss:.2f}' +
                           f'\nMargin Operation: {margin_operation:.2f}%\nBalance: $ {balance:.2f}')
+            continue
 
         if purchased:  # and (operation.startswith('SOBE') or operation.startswith('CAI')):
           perform_sell = False
@@ -309,10 +314,10 @@ class RoboTrader():
 
           if perform_sell:  # Register Sell
             balance += (amount_invested + profit_and_loss)
+            utils.register_account_balance(balance)
             params_operation = utils.get_params_operation(self._symbol, self._interval, 'SELL', amount_invested, balance, take_profit_price, stop_loss_price,
                                                           purchase_price, actual_price, profit_and_loss, rsi, operation)
             utils.register_operation(params_operation)
-            utils.register_account_balance(balance)
             self.log_selling(latest_closed_candle_open_time, operation, purchase_price, actual_price, margin, amount_invested, profit_and_loss, balance,
                              take_profit_price, stop_loss_price, margin_operation)
             # Reset variables
