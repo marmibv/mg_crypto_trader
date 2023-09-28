@@ -44,7 +44,9 @@ class RoboTrader():
 
     # Initialize logging
     self.log = self._configure_log(params['log_level'])
-    sm.send_status_to_telegram(f'Starting Robo Trader')
+
+    self.ix_symbol = f'{self._symbol}_{self._interval}'
+    sm.send_status_to_telegram(f'Starting Robo Trader for {self._symbol}_{self._interval}_{self._estimator} ')
 
   def _configure_log(self, log_level):
 
@@ -80,7 +82,8 @@ class RoboTrader():
           self._regression_features,
           self._regression_times,
           last_one=False)
-      self.log.info(f'info after calculating regresstion_times: ')
+      self.log.info(f'Info after calculating regresstion_times: ') if self._verbose else None
+      self._all_data.info() if self._verbose else None
 
       self._all_features += self._features_added
 

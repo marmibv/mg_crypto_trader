@@ -61,7 +61,8 @@ class BatchRoboTrader:
             tail=-1,
             columns=myenv.all_cols,
             parse_data=True,
-            updata_data_from_web=False)
+            updata_data_from_web=False,
+            start_date=self._start_date)
       except Exception as e:
         self.log.error(e)
     self.log.info(f'Loaded data to memory for symbols: {[s["symbol"] for s in self._top_params]}')
@@ -74,12 +75,6 @@ class BatchRoboTrader:
         self.log.info(f'Calc RSI for symbol: {ix_symbol}')
         self._all_data_list[ix_symbol] = calc_utils.calc_RSI(self._all_data_list[ix_symbol])
         self._all_data_list[ix_symbol].dropna(inplace=True)
-        self._all_data_list[ix_symbol].info() if self._verbose else None
-
-        self.log.info(f'Filtering Data for start_date: {self._start_date}')
-        self._all_data_list[ix_symbol] = self._all_data_list[ix_symbol][(self._all_data_list[ix_symbol]['open_time'] >= self._start_date)]
-
-        self.log.info('info after filtering start_date: ') if self._verbose else None
         self._all_data_list[ix_symbol].info() if self._verbose else None
 
       except Exception as e:

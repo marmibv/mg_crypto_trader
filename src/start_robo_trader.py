@@ -9,7 +9,7 @@ def main(args):
   verbose = False
 
   # Single arguments
-  start_date = '2010-01-01'
+  start_date = '2023-01-01'
   log_level = logging.INFO
 
   for arg in args:
